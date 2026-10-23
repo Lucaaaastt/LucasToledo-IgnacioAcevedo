@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,7 +33,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.prueba2.data.AppDatabase
 import com.example.prueba2.ui.theme.Prueba2Theme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.jvm.java
 
 class MainActivity : ComponentActivity() {
@@ -42,6 +47,8 @@ class MainActivity : ComponentActivity() {
         setContent {
 
             val context = LocalContext.current
+            val scope = rememberCoroutineScope()
+            val db = remember { AppDatabase.getDatabase(context) }
 
             var correo by remember { mutableStateOf("") }
             var password by remember { mutableStateOf("") }
@@ -87,16 +94,29 @@ class MainActivity : ComponentActivity() {
 
                         intentoGuardar = true
                         if(correo.isNotBlank() && password.isNotBlank()){
-                            val intent = Intent( this@MainActivity, CapaPrueba::class.java)
-                            startActivity(intent)
-                        }else{
-                            Toast.makeText(
-                                context,
-                                "Completar todos los campos!!",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
+                            scope.launch(Dispatchers.IO){
+                                val dao = db.usuarioDao()
+                                val usuarioEncontrado = dao.login(correo.trim(), password)
 
+                                withContext(Dispatchers.Main){
+                                    if(usuarioEncontrado != null){
+                                        Toast.makeText(context, "BIENVENIDO ${usuarioEncontrado.nombre}", Toast.LENGTH_LONG).show()
+
+                                        val intent = Intent( this@MainActivity, CapaPrueba::class.java).apply {
+                                            putExtra("USER_ROL", usuarioEncontrado.rol)
+                                            putExtra("USER_NOMBRE", usuarioEncontrado.nombre)
+                                        }
+                                        startActivity(intent)
+                                    }else{
+                                        Toast.makeText(
+                                            context,
+                                            "CORREO O CONTRASEÑA ERRONEOS!",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
+                            }
+                        }
                     }) {
                         Text("Ingresar")
                     }
