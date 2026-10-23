@@ -9,17 +9,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,12 +25,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.prueba2.data.AppDatabase
-import com.example.prueba2.ui.theme.Prueba2Theme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -102,7 +95,7 @@ class MainActivity : ComponentActivity() {
                                     if(usuarioEncontrado != null){
                                         Toast.makeText(context, "BIENVENIDO ${usuarioEncontrado.nombre}", Toast.LENGTH_LONG).show()
 
-                                        val intent = Intent( this@MainActivity, CapaPrueba::class.java).apply {
+                                        val intent = Intent( this@MainActivity, Menu::class.java).apply {
                                             putExtra("USER_ROL", usuarioEncontrado.rol)
                                             putExtra("USER_NOMBRE", usuarioEncontrado.nombre)
                                         }

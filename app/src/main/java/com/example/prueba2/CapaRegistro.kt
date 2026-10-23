@@ -9,9 +9,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,8 +32,11 @@ import com.example.prueba2.data.Usuario
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
-class CapaRegistro: ComponentActivity()  {
+class CapaRegistro: ComponentActivity() {
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -38,7 +46,7 @@ class CapaRegistro: ComponentActivity()  {
             val scope = rememberCoroutineScope()
             val db = remember { AppDatabase.getDatabase(context) }
 
-            var nombre by remember {mutableStateOf("")}
+            var nombre by remember { mutableStateOf("") }
             var correo by remember { mutableStateOf("") }
             var password by remember { mutableStateOf("") }
 
@@ -52,98 +60,132 @@ class CapaRegistro: ComponentActivity()  {
             val errorCorreo = intentoGuardar && !correoEsValido
             val errorPassword = intentoGuardar && !passwordEsValida
 
-            Column(Modifier.padding(top = 100.dp, start = 32.dp, end = 32.dp )) {
-                Text(
-                    modifier = Modifier.padding(start = 110.dp),
-                    text = "REGISTRO",
-                    color = Color(0xFF6750A4)
-                )
-
-                TextField(
-                    value = nombre,
-                    onValueChange = { nombre = it },
-                    label = { Text("Ingrese Nombre") },
-                    singleLine = true,
-                    isError = errorNombre,
-                    supportingText = {
-                        if(errorNombre){
-                            Text(text = "NOMBRE OBLIGATORIO!", color = MaterialTheme.colorScheme.error)
-                        }
-                    })
-
-                TextField(
-                    value = correo,
-                    onValueChange = { correo = it },
-                    label = { Text("Ingrese Correo") },
-                    singleLine = true,
-                    isError = errorCorreo,
-                    supportingText = {
-                        if(errorCorreo){
-                            val mensajeCorreo = when {
-                                correo.isBlank() -> "CORREO OBLIGATORIO!"
-                                !correo.trim().endsWith("@gmail.com") -> "DEBE SER @gmail.com"
-                                else -> "CORREO DEMASIADO CORTO"
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = { Text("REGISTRO") },
+                        navigationIcon = {
+                            IconButton(onClick = { finish() }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Volver atrás"
+                                )
                             }
-                            Text(text = mensajeCorreo, color = MaterialTheme.colorScheme.error)
                         }
-                    })
-
-                TextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Contraseña") },
-                    singleLine = true, // Restringe que al apretar enter, se salte abajo
-                    visualTransformation = PasswordVisualTransformation(),
-                    isError = errorPassword,
-                    supportingText = {
-                        if(errorPassword){
-                            val mensajePassword = when {
-                                password.isBlank() -> "CONTRASEÑA OBLIGATORIA!"
-                                else -> "DEBE POSEER AL MENOS 8 CARACTERES"
+                    )
+                }
+            ) { innerPadding ->
+                Column(
+                    modifier = Modifier
+                        .padding(innerPadding)
+                        .padding(horizontal = 32.dp, vertical = 16.dp)
+                ) {
+                    TextField(
+                        value = nombre,
+                        onValueChange = { nombre = it },
+                        label = { Text("Ingrese Nombre") },
+                        singleLine = true,
+                        isError = errorNombre,
+                        supportingText = {
+                            if (errorNombre) {
+                                Text(
+                                    text = "NOMBRE OBLIGATORIO!",
+                                    color = MaterialTheme.colorScheme.error
+                                )
                             }
-                            Text(text = mensajePassword, color = MaterialTheme.colorScheme.error)
                         }
-                    }
-                )
+                    )
 
-                Column(Modifier.padding(horizontal = 90.dp)) {
-                    Button(onClick = {
-                        intentoGuardar = true
-                        if (nombreEsValido && correoEsValido && passwordEsValida){
-                            scope.launch(Dispatchers.IO){
-                                val dao = db.usuarioDao()
-                                val existente = dao.obtenerPorCorreo(correo.trim())
+                    TextField(
+                        value = correo,
+                        onValueChange = { correo = it },
+                        label = { Text("Ingrese Correo") },
+                        singleLine = true,
+                        isError = errorCorreo,
+                        supportingText = {
+                            if (errorCorreo) {
+                                val mensajeCorreo = when {
+                                    correo.isBlank() -> "CORREO OBLIGATORIO!"
+                                    !correo.trim().endsWith("@gmail.com") -> "DEBE SER @gmail.com"
+                                    else -> "CORREO DEMASIADO CORTO"
+                                }
+                                Text(text = mensajeCorreo, color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    )
 
-                                if (existente != null){
-                                    withContext(Dispatchers.Main){
-                                        Toast.makeText(context, "CORREO YA REGISTRADO!", Toast.LENGTH_SHORT).show()
-                                    }
-                                }else {
-                                    dao.registrarUsuario(
-                                        Usuario(
-                                            nombre = nombre.trim(),
-                                            correo = correo.trim(),
-                                            password = password,
-                                            rol = "SOLICITANTE"
+                    TextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Contraseña") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        isError = errorPassword,
+                        supportingText = {
+                            if (errorPassword) {
+                                val mensajePassword = when {
+                                    password.isBlank() -> "CONTRASEÑA OBLIGATORIA!"
+                                    else -> "DEBE POSEER AL MENOS 8 CARACTERES"
+                                }
+                                Text(
+                                    text = mensajePassword,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    )
+
+                    Column(Modifier.padding(horizontal = 90.dp)) {
+                        Button(onClick = {
+                            intentoGuardar = true
+                            if (nombreEsValido && correoEsValido && passwordEsValida) {
+                                scope.launch(Dispatchers.IO) {
+                                    val dao = db.usuarioDao()
+                                    val existente = dao.obtenerPorCorreo(correo.trim())
+
+                                    if (existente != null) {
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(
+                                                context,
+                                                "CORREO YA REGISTRADO!",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    } else {
+                                        dao.registrarUsuario(
+                                            Usuario(
+                                                nombre = nombre.trim(),
+                                                correo = correo.trim(),
+                                                password = password,
+                                                rol = "SOLICITANTE"
+                                            )
                                         )
-                                    )
-                                    withContext(Dispatchers.Main){
-                                        Toast.makeText(context, "REGISTRO EXITOSO!", Toast.LENGTH_SHORT).show()
-                                        val intent = Intent(this@CapaRegistro, MainActivity::class.java)
-                                        startActivity(intent)
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(
+                                                context,
+                                                "REGISTRO EXITOSO!",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            val intent =
+                                                Intent(this@CapaRegistro, MainActivity::class.java)
+                                            startActivity(intent)
+                                            finish() // Cierra la pantalla de registro tras navegar
+                                        }
                                     }
                                 }
+                            } else {
+                                Toast.makeText(context, "COMPLETE LOS CAMPOS", Toast.LENGTH_SHORT)
+                                    .show()
                             }
-                        }else{
-                            Toast.makeText(context, "COMPLETE LOS CAMPOS", Toast.LENGTH_SHORT).show()
+                        }) {
+                            Text("Ingresar")
                         }
-                    }) {
-                        Text("Ingresar")
                     }
                 }
             }
         }
     }
+
     private fun correoValido(correo: String): Boolean {
         val correoLimpio = correo.trim()
         return correoLimpio.endsWith("@gmail.com") && correoLimpio.length > 18
