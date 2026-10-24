@@ -7,9 +7,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.getValue
@@ -17,7 +20,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
@@ -25,6 +27,12 @@ class Menu : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val nombreUsuario = intent.getStringExtra("USER_NOMBRE")
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
+            ?: "Solicitante"
+
         setContent {
 
             val context = LocalContext.current
@@ -58,17 +66,44 @@ class Menu : ComponentActivity() {
 
             Column(Modifier.padding(top = 100.dp, start = 32.dp, end = 32.dp )) {
                 Text(
-                    modifier = Modifier.padding(start = 90.dp),
-                    text = "MARCELA PAZ KT",
-                    color = Color(0xFF6750A4)
+                    text = "Marcela Paz",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary
                 )
 
-                Column(Modifier.padding(horizontal = 90.dp)) {
-                    Button(onClick = {
-                        mostrarAviso = true
-                    }) {
-                        Text("CERRAR SESION")
-                    }
+                Text(
+                    text = "Hola, $nombreUsuario",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
+                )
+
+                Button(
+                    onClick = {
+                        // Pendiente: conectar la pantalla de nueva solicitud.
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Nueva solicitud")
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        // Pendiente: conectar la pantalla de mis solicitudes.
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
+                ) {
+                    Text("Mis solicitudes")
+                }
+
+                TextButton(
+                    onClick = { mostrarAviso = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp)
+                ) {
+                    Text("Cerrar sesión")
                 }
             }
         }

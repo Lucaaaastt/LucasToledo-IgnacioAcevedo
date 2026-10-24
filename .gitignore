@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Instrucciones locales y pauta de evaluacion
+/AGENTS.md
+/[Cc]ontexto/
