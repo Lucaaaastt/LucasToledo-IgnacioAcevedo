@@ -32,6 +32,10 @@
             android:name=".CapaRegistro"
             android:exported="false"/>
 
+        <activity
+            android:name=".MisReservas"
+            android:exported="false"/>
+
     </application>
 
 </manifest>

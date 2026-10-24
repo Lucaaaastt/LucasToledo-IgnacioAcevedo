@@ -88,13 +88,13 @@ class Menu : ComponentActivity() {
 
                 OutlinedButton(
                     onClick = {
-                        // Pendiente: conectar la pantalla de mis solicitudes.
+                        startActivity(Intent(this@Menu, MisReservas::class.java))
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 12.dp)
                 ) {
-                    Text("Mis solicitudes")
+                    Text("Mis reservas")
                 }
 
                 TextButton(
