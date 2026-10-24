@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,6 +35,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Checkbox
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.input.VisualTransformation
 
 class CapaRegistro: ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -45,6 +49,7 @@ class CapaRegistro: ComponentActivity() {
             val context = LocalContext.current
             val scope = rememberCoroutineScope()
             val db = remember { AppDatabase.getDatabase(context) }
+            var isPasswordVisible by remember { mutableStateOf(false) }
 
             var nombre by remember { mutableStateOf("") }
             var correo by remember { mutableStateOf("") }
@@ -119,7 +124,11 @@ class CapaRegistro: ComponentActivity() {
                         onValueChange = { password = it },
                         label = { Text("Contraseña") },
                         singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
+                        visualTransformation = if (isPasswordVisible){
+                            VisualTransformation.None
+                        }else{
+                            PasswordVisualTransformation()
+                        },
                         isError = errorPassword,
                         supportingText = {
                             if (errorPassword) {
@@ -134,6 +143,14 @@ class CapaRegistro: ComponentActivity() {
                             }
                         }
                     )
+
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)){
+                        Checkbox(
+                            checked = isPasswordVisible,
+                            onCheckedChange = { isPasswordVisible = it }
+                        )
+                        Text(text = "Mostrar Contraseña")
+                    }
 
                     Column(Modifier.padding(horizontal = 90.dp)) {
                         Button(onClick = {

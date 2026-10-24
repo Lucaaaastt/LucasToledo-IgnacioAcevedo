@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.prueba2.data.AppDatabase
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +44,7 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             val scope = rememberCoroutineScope()
             val db = remember { AppDatabase.getDatabase(context) }
+            var isPasswordVisible by remember { mutableStateOf(false) }
 
             var correo by remember { mutableStateOf("") }
             var password by remember { mutableStateOf("") }
@@ -73,14 +76,27 @@ class MainActivity : ComponentActivity() {
                     onValueChange = { password = it },
                     label = { Text("Contraseña") },
                     singleLine = true, // Restringe que al apretar enter, se salte abajo
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = if (isPasswordVisible) {
+                        VisualTransformation.None
+                    }else{
+                        PasswordVisualTransformation()
+                    },
                     isError = errorPassword,
                     supportingText = {
                         if(errorPassword){
                             Text("CONTRASEÑA ES OBLIGATORIA!", color = MaterialTheme.colorScheme.error)
                         }
                     }
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)){
+                    Checkbox(
+                        checked = isPasswordVisible,
+                        onCheckedChange = { isPasswordVisible = it }
                     )
+                    Text(text = "Mostrar Contraseña")
+                }
+
 
                 Column(Modifier.padding(horizontal = 90.dp)) {
                     Button(onClick = {
