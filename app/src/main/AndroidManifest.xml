@@ -43,6 +43,10 @@
         <activity
             android:name=".MenuADM"
             android:exported="false"/>
+        <activity
+            android:name=".NuevaReserva"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"/>
 
     </application>
 

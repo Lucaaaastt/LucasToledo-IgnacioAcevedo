@@ -79,11 +79,11 @@ class Menu : ComponentActivity() {
 
                 Button(
                     onClick = {
-                        // Pendiente: conectar la pantalla de nueva solicitud.
+                        startActivity(Intent(this@Menu, NuevaReserva::class.java))
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Nueva solicitud")
+                    Text("Nueva reserva")
                 }
 
                 OutlinedButton(
