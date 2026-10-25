@@ -14,6 +14,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.flowWithLifecycle
 import com.example.prueba2.data.AppDatabase
 import com.example.prueba2.data.Reserva
+import com.example.prueba2.data.ReservaConSolicitante
 import com.example.prueba2.data.ReservaRepository
 import com.example.prueba2.ui.reservas.MisReservasPantalla
 import com.example.prueba2.ui.reservas.ReservaResumen
@@ -29,6 +30,7 @@ class MisReservas : ComponentActivity() {
         enableEdgeToEdge()
 
         val usuarioId = intent.getIntExtra("USER_ID", -1)
+        val esAdministrador = intent.getStringExtra("USER_ROL") == "ADMIN"
         if (usuarioId <= 0) {
             Toast.makeText(this, "Vuelve a iniciar sesión para consultar tus reservas.", Toast.LENGTH_LONG).show()
             finish()
@@ -39,7 +41,11 @@ class MisReservas : ComponentActivity() {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 require(modelClass.isAssignableFrom(MisReservasViewModel::class.java))
-                return MisReservasViewModel(repository.obtenerPorUsuario(usuarioId)) as T
+                return if (esAdministrador) {
+                    MisReservasViewModel.paraAdministrador(repository.obtenerPendientes(usuarioId))
+                } else {
+                    MisReservasViewModel(repository.obtenerPorUsuario(usuarioId))
+                } as T
             }
         }
         val viewModel = ViewModelProvider(this, factory)[MisReservasViewModel::class.java]
@@ -54,7 +60,10 @@ class MisReservas : ComponentActivity() {
                     reservas = estado.reservas,
                     cargando = estado.cargando,
                     errorCarga = estado.error,
-                    onVolver = { finish() }
+                    onVolver = { finish() },
+                    titulo = if (esAdministrador) "Solicitudes pendientes" else "Mis reservas",
+                    descripcion = if (esAdministrador) "Solicitudes enviadas por los usuarios para revisión." else "Consulta los datos de tus reservas.",
+                    mensajeVacio = if (esAdministrador) "No hay solicitudes pendientes." else "Aún no tienes solicitudes de reserva."
                 )
             }
         }
@@ -67,14 +76,31 @@ data class EstadoMisReservas(
     val error: String? = null
 )
 
-class MisReservasViewModel(reservas: Flow<List<Reserva>>) : ViewModel() {
-    val estado: Flow<EstadoMisReservas> = reservas
+class MisReservasViewModel private constructor(
+    resumenes: Flow<List<ReservaResumen>>,
+    mensajeError: String
+) : ViewModel() {
+    constructor(reservas: Flow<List<Reserva>>) : this(
+        reservas.map { lista -> lista.map { it.aResumenReserva() } },
+        "No se pudieron cargar tus reservas. Vuelve al menú e inténtalo nuevamente."
+    )
+
+    companion object {
+        fun paraAdministrador(reservas: Flow<List<ReservaConSolicitante>>) = MisReservasViewModel(
+            reservas.map { lista ->
+                lista.map { it.reserva.aResumenReserva().copy(solicitanteNombre = it.solicitanteNombre) }
+            },
+            "No se pudieron cargar las solicitudes. Verifica tu sesión de administrador e inténtalo nuevamente."
+        )
+    }
+
+    val estado: Flow<EstadoMisReservas> = resumenes
         .map { lista ->
-            EstadoMisReservas(reservas = lista.map { it.aResumenReserva() }, cargando = false)
+            EstadoMisReservas(reservas = lista, cargando = false)
         }
         .onStart { emit(EstadoMisReservas()) }
         .catch {
-            emit(EstadoMisReservas(cargando = false, error = "No se pudieron cargar tus reservas. Vuelve al menú e inténtalo nuevamente."))
+            emit(EstadoMisReservas(cargando = false, error = mensajeError))
         }
 }
 

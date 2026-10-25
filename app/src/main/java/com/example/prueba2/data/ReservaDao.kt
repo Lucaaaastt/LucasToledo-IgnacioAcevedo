@@ -1,6 +1,7 @@
 package com.example.prueba2.data
 
 import androidx.room.Dao
+import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
@@ -14,6 +15,17 @@ interface ReservaDao {
 
     @Query("SELECT * FROM reservas WHERE usuarioId = :usuarioId ORDER BY fecha ASC, horaInicio ASC, id ASC")
     fun obtenerPorUsuario(usuarioId: Int): Flow<List<Reserva>>
+
+    @Query(
+        """
+        SELECT reservas.*, usuarios.nombre AS solicitanteNombre
+        FROM reservas
+        INNER JOIN usuarios ON usuarios.id = reservas.usuarioId
+        WHERE reservas.estado = 'PENDIENTE'
+        ORDER BY reservas.fecha ASC, reservas.horaInicio ASC, reservas.id ASC
+        """
+    )
+    fun obtenerPendientes(): Flow<List<ReservaConSolicitante>>
 
     // Solo las aprobadas bloquean el horario, independientemente del usuario.
     @Query(
@@ -35,3 +47,8 @@ interface ReservaDao {
         horaTermino: LocalTime
     ): Boolean
 }
+
+data class ReservaConSolicitante(
+    @Embedded val reserva: Reserva,
+    val solicitanteNombre: String
+)

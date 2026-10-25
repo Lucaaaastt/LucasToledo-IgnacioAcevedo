@@ -79,7 +79,11 @@ class MenuADM : ComponentActivity() {
 
                 OutlinedButton(
                     onClick = {
-                        // Pendiente: conectar la pantalla de mis solicitudes.
+                        val intent = Intent(this@MenuADM, MisReservas::class.java).apply {
+                            putExtra("USER_ID", this@MenuADM.intent.getIntExtra("USER_ID", -1))
+                            putExtra("USER_ROL", "ADMIN")
+                        }
+                        startActivity(intent)
                     },
                     modifier = Modifier
                         .fillMaxWidth()

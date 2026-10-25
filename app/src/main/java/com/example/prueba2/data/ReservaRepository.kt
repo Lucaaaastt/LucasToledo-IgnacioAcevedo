@@ -2,6 +2,8 @@ package com.example.prueba2.data
 
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import java.time.LocalDateTime
 
 class ReservaNoDisponibleException : IllegalStateException(
@@ -9,6 +11,13 @@ class ReservaNoDisponibleException : IllegalStateException(
 )
 
 class ReservaRepository(private val database: AppDatabase) {
+    fun obtenerPendientes(administradorId: Int): Flow<List<ReservaConSolicitante>> = flow {
+        require(database.usuarioDao().obtenerPorId(administradorId)?.rol == "ADMIN") {
+            "Se requiere una cuenta de administrador para consultar las solicitudes."
+        }
+        emitAll(database.reservaDao().obtenerPendientes())
+    }
+
     fun obtenerPorUsuario(usuarioId: Int): Flow<List<Reserva>> {
         require(usuarioId > 0) { "Se requiere un usuario válido." }
         return database.reservaDao().obtenerPorUsuario(usuarioId)

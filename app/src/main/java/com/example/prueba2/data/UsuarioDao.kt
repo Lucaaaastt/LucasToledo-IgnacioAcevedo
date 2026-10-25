@@ -8,6 +8,9 @@ import androidx.room.Query
 @Dao
 interface UsuarioDao {
 
+    @Query("SELECT * FROM usuarios WHERE id = :usuarioId LIMIT 1")
+    suspend fun obtenerPorId(usuarioId: Int): Usuario?
+
     // Registro Usuarios
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun registrarUsuario(usuario: Usuario): Long

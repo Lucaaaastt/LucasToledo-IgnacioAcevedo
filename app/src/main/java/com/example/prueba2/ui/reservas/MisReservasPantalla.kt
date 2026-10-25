@@ -47,7 +47,8 @@ data class ReservaResumen(
     val horaInicio: LocalTime,
     val horaTermino: LocalTime,
     val motivo: String,
-    val estado: EstadoReserva = EstadoReserva.PENDIENTE
+    val estado: EstadoReserva = EstadoReserva.PENDIENTE,
+    val solicitanteNombre: String? = null
 )
 
 // Datos exclusivos de demostración: no se guardan en Room ni pertenecen a un usuario.
@@ -80,12 +81,15 @@ fun MisReservasPantalla(
     reservas: List<ReservaResumen>,
     onVolver: () -> Unit,
     cargando: Boolean = false,
-    errorCarga: String? = null
+    errorCarga: String? = null,
+    titulo: String = "Mis reservas",
+    descripcion: String = "Consulta los datos de tus reservas.",
+    mensajeVacio: String = "Aún no tienes solicitudes de reserva."
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mis reservas") },
+                title = { Text(titulo) },
                 navigationIcon = {
                     IconButton(onClick = onVolver) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver al menú")
@@ -103,7 +107,7 @@ fun MisReservasPantalla(
         ) {
             item {
                 Text(
-                    text = "Consulta los datos de tus reservas.",
+                    text = descripcion,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -126,7 +130,7 @@ fun MisReservasPantalla(
             } else if (reservas.isEmpty()) {
                 item {
                     Text(
-                        text = "Aún no tienes solicitudes de reserva.",
+                        text = mensajeVacio,
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(vertical = 24.dp)
                     )
@@ -153,6 +157,10 @@ private fun ReservaTarjeta(reserva: ReservaResumen) {
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(reserva.espacio, style = MaterialTheme.typography.titleLarge)
+
+            reserva.solicitanteNombre?.let { nombre ->
+                Text("Solicitante: $nombre", style = MaterialTheme.typography.bodyLarge)
+            }
 
             Surface(
                 color = if (reserva.estado == EstadoReserva.APROBADA) {
