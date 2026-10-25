@@ -5,18 +5,45 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.Room.databaseBuilder
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Usuario::class],
-    version = 1,
+    entities = [Usuario::class, Reserva::class],
+    version = 2,
     exportSchema = false
 )
+@TypeConverters(ReservaConverters::class)
 abstract class AppDatabase : RoomDatabase (){
     abstract fun usuarioDao(): UsuarioDao
+    abstract fun reservaDao(): ReservaDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS reservas (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        espacioId TEXT NOT NULL,
+                        usuarioId INTEGER NOT NULL,
+                        fecha INTEGER NOT NULL,
+                        horaInicio INTEGER NOT NULL,
+                        horaTermino INTEGER NOT NULL,
+                        motivo TEXT NOT NULL,
+                        FOREIGN KEY(usuarioId) REFERENCES usuarios(id)
+                            ON UPDATE NO ACTION ON DELETE NO ACTION
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_reservas_usuarioId ON reservas (usuarioId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_reservas_espacioId_fecha_horaInicio ON reservas (espacioId, fecha, horaInicio)")
+            }
+        }
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -24,7 +51,7 @@ abstract class AppDatabase : RoomDatabase (){
                     context.applicationContext,
                     AppDatabase::class.java,
                     "colegioMP_db"
-                ).build()
+                ).addMigrations(MIGRATION_1_2).build()
                 INSTANCE = instance
                 instance
             }
