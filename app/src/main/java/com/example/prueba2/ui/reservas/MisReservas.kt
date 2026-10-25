@@ -34,7 +34,9 @@ class MisReservas : ComponentActivity() {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 require(modelClass.isAssignableFrom(MisReservasViewModel::class.java))
                 return if (esAdministrador) {
-                    MisReservasViewModel.paraAdministrador(repository.obtenerPendientes(usuarioId))
+                    MisReservasViewModel.paraAdministrador(repository.obtenerPendientes(usuarioId)) { reservaId, decision ->
+                        repository.resolverSolicitud(usuarioId, reservaId, decision)
+                    }
                 } else {
                     MisReservasViewModel(repository.obtenerPorUsuario(usuarioId))
                 } as T
@@ -55,7 +57,12 @@ class MisReservas : ComponentActivity() {
                     onVolver = { finish() },
                     titulo = if (esAdministrador) "Solicitudes pendientes" else "Mis reservas",
                     descripcion = if (esAdministrador) "Solicitudes enviadas por los usuarios para revisión." else "Consulta los datos de tus reservas.",
-                    mensajeVacio = if (esAdministrador) "No hay solicitudes pendientes." else "Aún no tienes solicitudes de reserva."
+                    mensajeVacio = if (esAdministrador) "No hay solicitudes pendientes." else "Aún no tienes solicitudes de reserva.",
+                    mostrarAccionesAdministrativas = esAdministrador,
+                    decision = estado.decision,
+                    onSolicitarDecision = viewModel::solicitarDecision,
+                    onConfirmarDecision = viewModel::confirmarDecision,
+                    onCancelarDecision = viewModel::cancelarDecision
                 )
             }
         }

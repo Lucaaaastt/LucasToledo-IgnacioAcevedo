@@ -13,8 +13,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,9 +26,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -73,7 +78,12 @@ fun MisReservasPantalla(
     errorCarga: String? = null,
     titulo: String = "Mis reservas",
     descripcion: String = "Consulta los datos de tus reservas.",
-    mensajeVacio: String = "Aún no tienes solicitudes de reserva."
+    mensajeVacio: String = "Aún no tienes solicitudes de reserva.",
+    mostrarAccionesAdministrativas: Boolean = false,
+    decision: EstadoDecisionReserva = EstadoDecisionReserva(),
+    onSolicitarDecision: (ReservaResumen, EstadoReserva) -> Unit = { _, _ -> },
+    onConfirmarDecision: () -> Unit = {},
+    onCancelarDecision: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -102,6 +112,10 @@ fun MisReservasPantalla(
                 )
             }
 
+            decision.mensaje?.let { mensaje ->
+                item { Text(mensaje, color = MaterialTheme.colorScheme.primary) }
+            }
+
             if (cargando) {
                 item {
                     Row(
@@ -126,15 +140,59 @@ fun MisReservasPantalla(
                 }
             } else {
                 items(reservas, key = { it.id }) { reserva ->
-                    ReservaTarjeta(reserva)
+                    ReservaTarjeta(
+                        reserva = reserva,
+                        mostrarAccionesAdministrativas = mostrarAccionesAdministrativas,
+                        accionesHabilitadas = !decision.guardando,
+                        onSolicitarDecision = onSolicitarDecision
+                    )
                 }
             }
         }
     }
+
+    val seleccionada = decision.reserva
+    val destino = decision.estadoDestino
+    if (mostrarAccionesAdministrativas && seleccionada != null && destino != null) {
+        val aprobar = destino == EstadoReserva.APROBADA
+        AlertDialog(
+            onDismissRequest = onCancelarDecision,
+            title = { Text(if (aprobar) "Aprobar solicitud" else "Rechazar solicitud") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(seleccionada.espacio)
+                    Text(seleccionada.fecha.format(formatoFecha))
+                    Text("${seleccionada.horaInicio.format(formatoHora)} – ${seleccionada.horaTermino.format(formatoHora)}")
+                    Text(
+                        if (aprobar) "La reserva quedará aprobada y mantendrá ocupado el horario."
+                        else "La solicitud quedará rechazada y dejará de ocupar este horario."
+                    )
+                    decision.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    if (decision.guardando) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        Text("Guardando decisión…")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onConfirmarDecision, enabled = !decision.guardando) {
+                    Text(if (aprobar) "Aprobar" else "Rechazar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onCancelarDecision, enabled = !decision.guardando) { Text("Cancelar") }
+            }
+        )
+    }
 }
 
 @Composable
-private fun ReservaTarjeta(reserva: ReservaResumen) {
+private fun ReservaTarjeta(
+    reserva: ReservaResumen,
+    mostrarAccionesAdministrativas: Boolean,
+    accionesHabilitadas: Boolean,
+    onSolicitarDecision: (ReservaResumen, EstadoReserva) -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -152,10 +210,10 @@ private fun ReservaTarjeta(reserva: ReservaResumen) {
             }
 
             Surface(
-                color = if (reserva.estado == EstadoReserva.APROBADA) {
-                    MaterialTheme.colorScheme.secondaryContainer
-                } else {
-                    MaterialTheme.colorScheme.tertiaryContainer
+                color = when (reserva.estado) {
+                    EstadoReserva.APROBADA -> MaterialTheme.colorScheme.secondaryContainer
+                    EstadoReserva.RECHAZADA -> MaterialTheme.colorScheme.errorContainer
+                    EstadoReserva.PENDIENTE -> MaterialTheme.colorScheme.tertiaryContainer
                 },
                 shape = MaterialTheme.shapes.large
             ) {
@@ -165,12 +223,20 @@ private fun ReservaTarjeta(reserva: ReservaResumen) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        if (reserva.estado == EstadoReserva.APROBADA) Icons.Default.Check else Icons.Default.Schedule,
+                        when (reserva.estado) {
+                            EstadoReserva.APROBADA -> Icons.Default.Check
+                            EstadoReserva.RECHAZADA -> Icons.Default.Close
+                            EstadoReserva.PENDIENTE -> Icons.Default.Schedule
+                        },
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        if (reserva.estado == EstadoReserva.APROBADA) "Aprobada" else "Pendiente de aprobación",
+                        when (reserva.estado) {
+                            EstadoReserva.APROBADA -> "Aprobada"
+                            EstadoReserva.RECHAZADA -> "Rechazada"
+                            EstadoReserva.PENDIENTE -> "Pendiente de aprobación"
+                        },
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -191,6 +257,25 @@ private fun ReservaTarjeta(reserva: ReservaResumen) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(reserva.motivo, style = MaterialTheme.typography.bodyLarge)
+            }
+
+            if (mostrarAccionesAdministrativas && reserva.estado == EstadoReserva.PENDIENTE) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = { onSolicitarDecision(reserva, EstadoReserva.APROBADA) },
+                        enabled = accionesHabilitadas,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Aprobar")
+                    }
+                    OutlinedButton(
+                        onClick = { onSolicitarDecision(reserva, EstadoReserva.RECHAZADA) },
+                        enabled = accionesHabilitadas,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Rechazar")
+                    }
+                }
             }
         }
     }
@@ -225,5 +310,20 @@ private fun MisReservasPreview() {
 private fun MisReservasVaciasPreview() {
     Prueba2Theme {
         MisReservasPantalla(emptyList(), onVolver = {})
+    }
+}
+
+@Preview(showBackground = true, widthDp = 320, heightDp = 800)
+@Composable
+private fun SolicitudesAdministradorPreview() {
+    Prueba2Theme {
+        MisReservasPantalla(
+            reservas = listOf(reservasDeEjemplo.first().copy(solicitanteNombre = "Marcela")),
+            onVolver = {},
+            titulo = "Solicitudes pendientes",
+            descripcion = "Solicitudes enviadas por los usuarios para revisión.",
+            mensajeVacio = "No hay solicitudes pendientes.",
+            mostrarAccionesAdministrativas = true
+        )
     }
 }

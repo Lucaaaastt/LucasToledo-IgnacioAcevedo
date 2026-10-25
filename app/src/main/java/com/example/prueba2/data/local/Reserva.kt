@@ -37,5 +37,6 @@ data class Reserva(
 
 enum class EstadoReserva {
     PENDIENTE,
-    APROBADA
+    APROBADA,
+    RECHAZADA
 }

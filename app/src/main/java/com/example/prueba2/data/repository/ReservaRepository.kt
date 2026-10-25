@@ -27,6 +27,27 @@ class ReservaRepository(private val database: AppDatabase) {
         return database.reservaDao().obtenerPorUsuario(usuarioId)
     }
 
+    suspend fun resolverSolicitud(administradorId: Int, reservaId: Long, estado: EstadoReserva) {
+        require(estado == EstadoReserva.APROBADA || estado == EstadoReserva.RECHAZADA) {
+            "La decisión debe ser aprobar o rechazar."
+        }
+        database.withTransaction {
+            require(database.usuarioDao().obtenerPorId(administradorId)?.rol == "ADMIN") {
+                "Se requiere una cuenta de administrador para resolver solicitudes."
+            }
+            val dao = database.reservaDao()
+            val reserva = checkNotNull(dao.obtenerPorId(reservaId)) { "La solicitud ya no existe." }
+            check(reserva.estado == EstadoReserva.PENDIENTE) { "La solicitud ya fue resuelta." }
+            if (estado == EstadoReserva.APROBADA && dao.existeCruceDeHorario(
+                    reserva.espacioId, reserva.fecha, reserva.horaInicio, reserva.horaTermino, reserva.id
+                )
+            ) {
+                throw ReservaNoDisponibleException()
+            }
+            check(dao.resolverPendiente(reservaId, estado) == 1) { "La solicitud ya fue resuelta." }
+        }
+    }
+
     suspend fun enviarSolicitud(reserva: Reserva): Long {
         require(reserva.id == 0L) { "La solicitud debe ser nueva." }
         require(reserva.usuarioId > 0) { "La solicitud requiere un usuario válido." }

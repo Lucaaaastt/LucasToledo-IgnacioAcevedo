@@ -26,6 +26,12 @@ interface ReservaDao {
     )
     fun obtenerPendientes(): Flow<List<ReservaConSolicitante>>
 
+    @Query("SELECT * FROM reservas WHERE id = :reservaId LIMIT 1")
+    suspend fun obtenerPorId(reservaId: Long): Reserva?
+
+    @Query("UPDATE reservas SET estado = :estado WHERE id = :reservaId AND estado = 'PENDIENTE'")
+    suspend fun resolverPendiente(reservaId: Long, estado: EstadoReserva): Int
+
     // Las solicitudes pendientes y aprobadas bloquean el horario para todos los usuarios.
     @Query(
         """
@@ -33,6 +39,7 @@ interface ReservaDao {
             SELECT 1 FROM reservas
             WHERE espacioId = :espacioId
               AND fecha = :fecha
+              AND id != :reservaIdExcluir
               AND estado IN ('PENDIENTE', 'APROBADA')
               AND horaInicio < :horaTermino
               AND horaTermino > :horaInicio
@@ -43,6 +50,7 @@ interface ReservaDao {
         espacioId: String,
         fecha: LocalDate,
         horaInicio: LocalTime,
-        horaTermino: LocalTime
+        horaTermino: LocalTime,
+        reservaIdExcluir: Long = 0
     ): Boolean
 }
