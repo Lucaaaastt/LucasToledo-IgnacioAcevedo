@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.flow
 import java.time.LocalDateTime
 
 class ReservaNoDisponibleException : IllegalStateException(
-    "El espacio ya tiene una reserva aprobada para ese horario."
+    "El espacio ya está ocupado por una solicitud pendiente o una reserva aprobada para ese horario."
 )
 
 class ReservaRepository(private val database: AppDatabase) {

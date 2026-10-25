@@ -305,7 +305,7 @@ class NuevaReservaViewModel(
             } catch (cancelacion: CancellationException) {
                 throw cancelacion
             } catch (_: ReservaNoDisponibleException) {
-                estado = estado.copy(errorGuardado = "El espacio ya tiene una reserva aprobada para ese horario. Elige otro horario o espacio.")
+                estado = estado.copy(errorGuardado = "El espacio ya está ocupado por una solicitud pendiente o una reserva aprobada para ese horario. Elige otro horario o espacio.")
             } catch (_: Exception) {
                 estado = estado.copy(errorGuardado = "No se pudo enviar la solicitud. Tus datos se conservaron; puedes volver a intentarlo.")
             } finally {
@@ -459,7 +459,7 @@ fun NuevaReservaPantalla(
                 Text("Revisar solicitud")
             }
             Text(
-                text = "* Campos obligatorios. La solicitud requiere aprobación del administrador. Mientras esté pendiente no bloquea el horario.",
+                text = "* Campos obligatorios. La solicitud requiere aprobación del administrador. Al enviarla, el espacio queda ocupado para la fecha y el horario solicitados.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -479,7 +479,7 @@ fun NuevaReservaPantalla(
                     Text("Fecha: ${estado.fecha?.format(formatoFechaReserva)}")
                     Text("Horario: ${estado.horaInicio?.format(formatoHoraReserva)} – ${estado.horaTermino?.format(formatoHoraReserva)}")
                     Text("Motivo: ${estado.motivo.trim()}")
-                    Text("Al enviar, la solicitud se guardará como pendiente de aprobación. Solo las reservas aprobadas bloquean el horario.")
+                    Text("Al enviar, la solicitud se guardará como pendiente de aprobación y el espacio quedará ocupado para la fecha y el horario solicitados.")
                     estado.errorGuardado?.let {
                         Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.semantics { semanticError(it) })
                     }
@@ -503,7 +503,7 @@ fun NuevaReservaPantalla(
         AlertDialog(
             onDismissRequest = onCerrarExito,
             title = { Text("Solicitud enviada") },
-            text = { Text("Tu solicitud se guardó y está pendiente de aprobación del administrador. El horario todavía no está reservado.") },
+            text = { Text("Tu solicitud se guardó y está pendiente de aprobación del administrador. El espacio ya está ocupado para la fecha y el horario solicitados.") },
             confirmButton = {
                 TextButton(onClick = onCerrarExito) { Text("Ver mis reservas") }
             }

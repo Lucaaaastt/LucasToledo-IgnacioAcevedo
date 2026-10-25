@@ -27,14 +27,14 @@ interface ReservaDao {
     )
     fun obtenerPendientes(): Flow<List<ReservaConSolicitante>>
 
-    // Solo las aprobadas bloquean el horario, independientemente del usuario.
+    // Las solicitudes pendientes y aprobadas bloquean el horario para todos los usuarios.
     @Query(
         """
         SELECT EXISTS(
             SELECT 1 FROM reservas
             WHERE espacioId = :espacioId
               AND fecha = :fecha
-              AND estado = 'APROBADA'
+              AND estado IN ('PENDIENTE', 'APROBADA')
               AND horaInicio < :horaTermino
               AND horaTermino > :horaInicio
         )
