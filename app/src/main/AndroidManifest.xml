@@ -36,6 +36,14 @@
             android:name=".MisReservas"
             android:exported="false"/>
 
+        <activity
+            android:name=".CapaRegistroAdm"
+            android:exported="false"/>
+
+        <activity
+            android:name=".MenuADM"
+            android:exported="false"/>
+
     </application>
 
 </manifest>
