@@ -15,13 +15,14 @@ interface ReservaDao {
     @Query("SELECT * FROM reservas WHERE usuarioId = :usuarioId ORDER BY fecha ASC, horaInicio ASC, id ASC")
     fun obtenerPorUsuario(usuarioId: Int): Flow<List<Reserva>>
 
-    // Incluye reservas de todos los usuarios. Horarios consecutivos no se cruzan.
+    // Solo las aprobadas bloquean el horario, independientemente del usuario.
     @Query(
         """
         SELECT EXISTS(
             SELECT 1 FROM reservas
             WHERE espacioId = :espacioId
               AND fecha = :fecha
+              AND estado = 'APROBADA'
               AND horaInicio < :horaTermino
               AND horaTermino > :horaInicio
         )

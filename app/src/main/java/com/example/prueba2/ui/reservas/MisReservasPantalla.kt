@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,6 +34,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.prueba2.ui.theme.Prueba2Theme
+import com.example.prueba2.data.EstadoReserva
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -44,11 +46,12 @@ data class ReservaResumen(
     val fecha: LocalDate,
     val horaInicio: LocalTime,
     val horaTermino: LocalTime,
-    val motivo: String
+    val motivo: String,
+    val estado: EstadoReserva = EstadoReserva.PENDIENTE
 )
 
 // Datos exclusivos de demostración: no se guardan en Room ni pertenecen a un usuario.
-internal val reservasDeEjemplo = listOf(
+private val reservasDeEjemplo = listOf(
     ReservaResumen(
         id = "ejemplo-1",
         espacio = "Laboratorio de Computación 2",
@@ -63,7 +66,8 @@ internal val reservasDeEjemplo = listOf(
         fecha = LocalDate.of(2026, 10, 27),
         horaInicio = LocalTime.of(14, 0),
         horaTermino = LocalTime.of(15, 30),
-        motivo = "Taller de lectura"
+        motivo = "Taller de lectura",
+        estado = EstadoReserva.APROBADA
     )
 )
 
@@ -75,7 +79,8 @@ private val formatoHora = DateTimeFormatter.ofPattern("HH:mm")
 fun MisReservasPantalla(
     reservas: List<ReservaResumen>,
     onVolver: () -> Unit,
-    mostrarAvisoDeEjemplo: Boolean = false
+    cargando: Boolean = false,
+    errorCarga: String? = null
 ) {
     Scaffold(
         topBar = {
@@ -104,26 +109,24 @@ fun MisReservasPantalla(
                 )
             }
 
-            if (mostrarAvisoDeEjemplo) {
+            if (cargando) {
                 item {
-                    Surface(
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = MaterialTheme.shapes.medium,
-                        modifier = Modifier.fillMaxWidth()
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Datos de ejemplo. Estas tarjetas no corresponden a reservas reales.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(16.dp)
-                        )
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        Text("Cargando solicitudes…")
                     }
                 }
-            }
-
-            if (reservas.isEmpty()) {
+            } else if (errorCarga != null) {
+                item {
+                    Text(errorCarga, color = MaterialTheme.colorScheme.error)
+                }
+            } else if (reservas.isEmpty()) {
                 item {
                     Text(
-                        text = "Aún no tienes reservas.",
+                        text = "Aún no tienes solicitudes de reserva.",
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(vertical = 24.dp)
                     )
@@ -152,7 +155,11 @@ private fun ReservaTarjeta(reserva: ReservaResumen) {
             Text(reserva.espacio, style = MaterialTheme.typography.titleLarge)
 
             Surface(
-                color = MaterialTheme.colorScheme.secondaryContainer,
+                color = if (reserva.estado == EstadoReserva.APROBADA) {
+                    MaterialTheme.colorScheme.secondaryContainer
+                } else {
+                    MaterialTheme.colorScheme.tertiaryContainer
+                },
                 shape = MaterialTheme.shapes.large
             ) {
                 Row(
@@ -160,8 +167,15 @@ private fun ReservaTarjeta(reserva: ReservaResumen) {
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Text("Reservada", style = MaterialTheme.typography.labelMedium)
+                    Icon(
+                        if (reserva.estado == EstadoReserva.APROBADA) Icons.Default.Check else Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        if (reserva.estado == EstadoReserva.APROBADA) "Aprobada" else "Pendiente de aprobación",
+                        style = MaterialTheme.typography.labelMedium
+                    )
                 }
             }
 
@@ -205,7 +219,7 @@ private fun ReservaDato(icono: ImageVector, texto: String) {
 @Composable
 private fun MisReservasPreview() {
     Prueba2Theme {
-        MisReservasPantalla(reservasDeEjemplo, onVolver = {}, mostrarAvisoDeEjemplo = true)
+        MisReservasPantalla(reservasDeEjemplo, onVolver = {})
     }
 }
 

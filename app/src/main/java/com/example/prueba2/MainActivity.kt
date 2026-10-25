@@ -121,6 +121,7 @@ class MainActivity : ComponentActivity() {
                                             Menu::class.java
                                         }
                                         val intent = Intent( this@MainActivity, destinoClass).apply {
+                                            putExtra("USER_ID", usuarioEncontrado.id)
                                             putExtra("USER_ROL", usuarioEncontrado.rol)
                                             putExtra("USER_NOMBRE", usuarioEncontrado.nombre)
                                         }

@@ -11,7 +11,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Usuario::class, Reserva::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(ReservaConverters::class)
@@ -45,13 +45,19 @@ abstract class AppDatabase : RoomDatabase (){
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE reservas ADD COLUMN estado TEXT NOT NULL DEFAULT 'PENDIENTE'")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "colegioMP_db"
-                ).addMigrations(MIGRATION_1_2).build()
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
                 INSTANCE = instance
                 instance
             }

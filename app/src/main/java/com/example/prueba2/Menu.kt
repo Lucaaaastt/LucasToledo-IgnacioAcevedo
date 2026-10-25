@@ -28,6 +28,8 @@ class Menu : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        val usuarioId = intent.getIntExtra("USER_ID", -1)
+
         val nombreUsuario = intent.getStringExtra("USER_NOMBRE")
             ?.trim()
             ?.takeIf { it.isNotBlank() }
@@ -79,7 +81,9 @@ class Menu : ComponentActivity() {
 
                 Button(
                     onClick = {
-                        startActivity(Intent(this@Menu, NuevaReserva::class.java))
+                        startActivity(Intent(this@Menu, NuevaReserva::class.java).apply {
+                            putExtra("USER_ID", usuarioId)
+                        })
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -88,7 +92,9 @@ class Menu : ComponentActivity() {
 
                 OutlinedButton(
                     onClick = {
-                        startActivity(Intent(this@Menu, MisReservas::class.java))
+                        startActivity(Intent(this@Menu, MisReservas::class.java).apply {
+                            putExtra("USER_ID", usuarioId)
+                        })
                     },
                     modifier = Modifier
                         .fillMaxWidth()

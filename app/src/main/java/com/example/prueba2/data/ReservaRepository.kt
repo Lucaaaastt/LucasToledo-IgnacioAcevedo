@@ -1,0 +1,40 @@
+package com.example.prueba2.data
+
+import androidx.room.withTransaction
+import kotlinx.coroutines.flow.Flow
+import java.time.LocalDateTime
+
+class ReservaNoDisponibleException : IllegalStateException(
+    "El espacio ya tiene una reserva aprobada para ese horario."
+)
+
+class ReservaRepository(private val database: AppDatabase) {
+    fun obtenerPorUsuario(usuarioId: Int): Flow<List<Reserva>> {
+        require(usuarioId > 0) { "Se requiere un usuario válido." }
+        return database.reservaDao().obtenerPorUsuario(usuarioId)
+    }
+
+    suspend fun enviarSolicitud(reserva: Reserva): Long {
+        require(reserva.id == 0L) { "La solicitud debe ser nueva." }
+        require(reserva.usuarioId > 0) { "La solicitud requiere un usuario válido." }
+        require(reserva.espacioId.isNotBlank()) { "Selecciona un espacio." }
+        require(reserva.horaTermino.isAfter(reserva.horaInicio)) { "El horario no es válido." }
+        require(!LocalDateTime.of(reserva.fecha, reserva.horaInicio).isBefore(LocalDateTime.now())) {
+            "El inicio de la reserva no puede estar en el pasado."
+        }
+        val motivo = reserva.motivo.trim()
+        require(motivo.isNotEmpty() && motivo.length <= 300) { "El motivo no es válido." }
+
+        return database.withTransaction {
+            val dao = database.reservaDao()
+            if (dao.existeCruceDeHorario(
+                    reserva.espacioId, reserva.fecha, reserva.horaInicio, reserva.horaTermino
+                )
+            ) {
+                throw ReservaNoDisponibleException()
+            }
+            // El solicitante no puede aprobar su propia solicitud.
+            dao.registrarReserva(reserva.copy(motivo = motivo, estado = EstadoReserva.PENDIENTE))
+        }
+    }
+}

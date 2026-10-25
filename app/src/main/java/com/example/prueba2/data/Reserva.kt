@@ -1,6 +1,7 @@
 package com.example.prueba2.data
 
 import androidx.room.Entity
+import androidx.room.ColumnInfo
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -30,8 +31,15 @@ data class Reserva(
     val fecha: LocalDate,
     val horaInicio: LocalTime,
     val horaTermino: LocalTime,
-    val motivo: String
+    val motivo: String,
+    @ColumnInfo(defaultValue = "'PENDIENTE'")
+    val estado: EstadoReserva = EstadoReserva.PENDIENTE
 )
+
+enum class EstadoReserva {
+    PENDIENTE,
+    APROBADA
+}
 
 class ReservaConverters {
     // SQLite guarda la fecha como días desde 1970-01-01.
