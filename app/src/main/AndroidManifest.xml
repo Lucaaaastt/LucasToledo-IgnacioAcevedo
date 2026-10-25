@@ -32,6 +32,14 @@
             android:name=".CapaRegistro"
             android:exported="false"/>
 
+        <activity
+            android:name=".CapaRegistroAdm"
+            android:exported="false"/>
+
+        <activity
+            android:name=".MenuADM"
+            android:exported="false"/>
+
     </application>
 
 </manifest>
