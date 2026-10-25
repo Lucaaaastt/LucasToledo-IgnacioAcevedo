@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Prueba2">
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.login.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Prueba2"
@@ -25,26 +25,26 @@
         </activity>
 
         <activity
-            android:name=".Menu"
+            android:name=".ui.menu.Menu"
             android:exported="false"/>
 
         <activity
-            android:name=".CapaRegistro"
+            android:name=".ui.registro.CapaRegistro"
             android:exported="false"/>
 
         <activity
-            android:name=".MisReservas"
+            android:name=".ui.reservas.MisReservas"
             android:exported="false"/>
 
         <activity
-            android:name=".CapaRegistroAdm"
+            android:name=".ui.registro.CapaRegistroAdm"
             android:exported="false"/>
 
         <activity
-            android:name=".MenuADM"
+            android:name=".ui.menu.MenuADM"
             android:exported="false"/>
         <activity
-            android:name=".NuevaReserva"
+            android:name=".ui.reservas.NuevaReserva"
             android:exported="false"
             android:windowSoftInputMode="adjustResize"/>
 

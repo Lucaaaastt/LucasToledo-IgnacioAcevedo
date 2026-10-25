@@ -1,10 +1,14 @@
-package com.example.prueba2.data
+package com.example.prueba2.data.repository
 
 import androidx.room.withTransaction
+import com.example.prueba2.data.local.AppDatabase
+import com.example.prueba2.data.local.EstadoReserva
+import com.example.prueba2.data.local.Reserva
+import com.example.prueba2.data.local.ReservaConSolicitante
+import java.time.LocalDateTime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import java.time.LocalDateTime
 
 class ReservaNoDisponibleException : IllegalStateException(
     "El espacio ya está ocupado por una solicitud pendiente o una reserva aprobada para ese horario."

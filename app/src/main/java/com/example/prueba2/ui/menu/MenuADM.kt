@@ -1,4 +1,4 @@
-package com.example.prueba2
+package com.example.prueba2.ui.menu
 
 import android.content.Intent
 import android.os.Bundle
@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -22,6 +21,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.prueba2.ui.login.MainActivity
+import com.example.prueba2.ui.reservas.MisReservas
 
 class MenuADM : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -1,4 +1,4 @@
-package com.example.prueba2
+package com.example.prueba2.ui.menu
 
 import android.content.Intent
 import android.os.Bundle
@@ -22,6 +22,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.prueba2.ui.login.MainActivity
+import com.example.prueba2.ui.reservas.MisReservas
+import com.example.prueba2.ui.reservas.NuevaReserva
 
 class Menu : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

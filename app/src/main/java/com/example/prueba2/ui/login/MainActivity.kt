@@ -1,4 +1,4 @@
-package com.example.prueba2
+package com.example.prueba2.ui.login
 
 import android.content.Intent
 import android.os.Bundle
@@ -33,11 +33,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.prueba2.data.AppDatabase
+import com.example.prueba2.R
+import com.example.prueba2.data.local.AppDatabase
+import com.example.prueba2.ui.menu.Menu
+import com.example.prueba2.ui.menu.MenuADM
+import com.example.prueba2.ui.registro.CapaRegistro
+import com.example.prueba2.ui.registro.CapaRegistroAdm
+import kotlin.jvm.java
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.jvm.java
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

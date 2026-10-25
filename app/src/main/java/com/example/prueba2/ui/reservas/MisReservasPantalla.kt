@@ -33,23 +33,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.prueba2.data.local.EstadoReserva
 import com.example.prueba2.ui.theme.Prueba2Theme
-import com.example.prueba2.data.EstadoReserva
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-
-data class ReservaResumen(
-    val id: String,
-    val espacio: String,
-    val fecha: LocalDate,
-    val horaInicio: LocalTime,
-    val horaTermino: LocalTime,
-    val motivo: String,
-    val estado: EstadoReserva = EstadoReserva.PENDIENTE,
-    val solicitanteNombre: String? = null
-)
 
 // Datos exclusivos de demostración: no se guardan en Room ni pertenecen a un usuario.
 private val reservasDeEjemplo = listOf(

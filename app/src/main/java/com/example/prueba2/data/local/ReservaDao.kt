@@ -1,12 +1,11 @@
-package com.example.prueba2.data
+package com.example.prueba2.data.local
 
 import androidx.room.Dao
-import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.Query
-import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.LocalTime
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ReservaDao {
@@ -47,8 +46,3 @@ interface ReservaDao {
         horaTermino: LocalTime
     ): Boolean
 }
-
-data class ReservaConSolicitante(
-    @Embedded val reserva: Reserva,
-    val solicitanteNombre: String
-)

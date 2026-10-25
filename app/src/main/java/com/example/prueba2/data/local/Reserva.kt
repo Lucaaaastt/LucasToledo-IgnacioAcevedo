@@ -1,11 +1,10 @@
-package com.example.prueba2.data
+package com.example.prueba2.data.local
 
-import androidx.room.Entity
 import androidx.room.ColumnInfo
+import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import androidx.room.TypeConverter
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -39,20 +38,4 @@ data class Reserva(
 enum class EstadoReserva {
     PENDIENTE,
     APROBADA
-}
-
-class ReservaConverters {
-    // SQLite guarda la fecha como días desde 1970-01-01.
-    @TypeConverter
-    fun fechaAEntero(fecha: LocalDate): Long = fecha.toEpochDay()
-
-    @TypeConverter
-    fun enteroAFecha(dias: Long): LocalDate = LocalDate.ofEpochDay(dias)
-
-    // SQLite guarda la hora como nanosegundos desde medianoche.
-    @TypeConverter
-    fun horaAEntero(hora: LocalTime): Long = hora.toNanoOfDay()
-
-    @TypeConverter
-    fun enteroAHora(nanosegundos: Long): LocalTime = LocalTime.ofNanoOfDay(nanosegundos)
 }
