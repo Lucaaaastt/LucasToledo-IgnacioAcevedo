@@ -1,5 +1,11 @@
 package com.example.prueba2.ui.reservas
 
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import com.example.prueba2.utils.Notificaciones
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -44,6 +50,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import android.Manifest
 
 // Datos exclusivos de demostración: no se guardan en Room ni pertenecen a un usuario.
 private val reservasDeEjemplo = listOf(
@@ -85,6 +92,21 @@ fun MisReservasPantalla(
     onConfirmarDecision: () -> Unit = {},
     onCancelarDecision: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    // PARA PEDIR PERMISO POR NOTIFIACIONES
+    val launcherPermiso = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { /* Se ejecuta al responder el dialogo */ }
+
+    // SE CREAR CANAL Y PEDIR PERMISO AL CARGAR PANTALLA
+    LaunchedEffect(Unit) {
+        Notificaciones.crearCanalNotificaciones(context)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            launcherPermiso.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -175,7 +197,19 @@ fun MisReservasPantalla(
                 }
             },
             confirmButton = {
-                TextButton(onClick = onConfirmarDecision, enabled = !decision.guardando) {
+                TextButton(
+                    onClick = {
+                        if (seleccionada != null && destino != null){
+                            Notificaciones.enviarNotificacionReserva(
+                                context = context,
+                                espacio = seleccionada.espacio,
+                                estado = destino
+                            )
+                        }
+                        onConfirmarDecision()
+                    },
+                    enabled = !decision.guardando
+                ) {
                     Text(if (aprobar) "Aprobar" else "Rechazar")
                 }
             },
