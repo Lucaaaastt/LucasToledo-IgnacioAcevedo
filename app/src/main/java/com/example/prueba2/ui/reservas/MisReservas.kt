@@ -41,9 +41,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.flowWithLifecycle
 import com.example.prueba2.data.local.AppDatabase
+import com.example.prueba2.data.local.EstadoReserva
 import com.example.prueba2.data.repository.ReservaRepository
 import com.example.prueba2.ui.login.MainActivity
 import com.example.prueba2.ui.theme.Prueba2Theme
+import com.example.prueba2.utils.CalendarioReservas
 
 class MisReservas : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -187,7 +189,19 @@ class MisReservas : ComponentActivity() {
                             decision = estado.decision,
                             onSolicitarDecision = viewModel::solicitarDecision,
                             onConfirmarDecision = viewModel::confirmarDecision,
-                            onCancelarDecision = viewModel::cancelarDecision
+                            onCancelarDecision = viewModel::cancelarDecision,
+                            onAgregarAlCalendario = { reserva ->
+                                if (!esAdministrador && reserva.estado == EstadoReserva.APROBADA) {
+                                    CalendarioReservas.abrir(
+                                        activity = this@MisReservas,
+                                        espacio = reserva.espacio,
+                                        fecha = reserva.fecha,
+                                        horaInicio = reserva.horaInicio,
+                                        horaTermino = reserva.horaTermino,
+                                        motivo = reserva.motivo
+                                    )
+                                }
+                            }
                         )
                     }
                 }

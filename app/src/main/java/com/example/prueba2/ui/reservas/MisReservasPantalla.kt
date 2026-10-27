@@ -90,7 +90,8 @@ fun MisReservasPantalla(
     decision: EstadoDecisionReserva = EstadoDecisionReserva(),
     onSolicitarDecision: (ReservaResumen, EstadoReserva) -> Unit = { _, _ -> },
     onConfirmarDecision: () -> Unit = {},
-    onCancelarDecision: () -> Unit = {}
+    onCancelarDecision: () -> Unit = {},
+    onAgregarAlCalendario: (ReservaResumen) -> Unit = {}
 ) {
     val context = LocalContext.current
     // PARA PEDIR PERMISO POR NOTIFIACIONES
@@ -166,7 +167,8 @@ fun MisReservasPantalla(
                         reserva = reserva,
                         mostrarAccionesAdministrativas = mostrarAccionesAdministrativas,
                         accionesHabilitadas = !decision.guardando,
-                        onSolicitarDecision = onSolicitarDecision
+                        onSolicitarDecision = onSolicitarDecision,
+                        onAgregarAlCalendario = onAgregarAlCalendario
                     )
                 }
             }
@@ -225,7 +227,8 @@ private fun ReservaTarjeta(
     reserva: ReservaResumen,
     mostrarAccionesAdministrativas: Boolean,
     accionesHabilitadas: Boolean,
-    onSolicitarDecision: (ReservaResumen, EstadoReserva) -> Unit
+    onSolicitarDecision: (ReservaResumen, EstadoReserva) -> Unit,
+    onAgregarAlCalendario: (ReservaResumen) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -291,6 +294,16 @@ private fun ReservaTarjeta(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(reserva.motivo, style = MaterialTheme.typography.bodyLarge)
+            }
+
+            if (!mostrarAccionesAdministrativas && reserva.estado == EstadoReserva.APROBADA) {
+                OutlinedButton(
+                    onClick = { onAgregarAlCalendario(reserva) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Text("Agregar al calendario", modifier = Modifier.padding(start = 8.dp))
+                }
             }
 
             if (mostrarAccionesAdministrativas && reserva.estado == EstadoReserva.PENDIENTE) {
