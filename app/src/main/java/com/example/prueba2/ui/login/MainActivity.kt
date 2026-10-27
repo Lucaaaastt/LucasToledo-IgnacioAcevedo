@@ -43,6 +43,18 @@ import kotlin.jvm.java
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,6 +71,8 @@ class MainActivity : ComponentActivity() {
             var password by remember { mutableStateOf("") }
 
             var intentoGuardar by remember { mutableStateOf(false) }
+            var errorLoginVisible by remember { mutableStateOf(false) }
+
             val errorCorreo = intentoGuardar && correo.isBlank()
             val errorPassword = intentoGuardar && password.isBlank()
 
@@ -66,11 +80,31 @@ class MainActivity : ComponentActivity() {
                 Text(
                     modifier = Modifier.padding(start = 90.dp),
                     text = "MARCELA PAZ KT",
-                    color = Color(0xFF6750A4))
+                    color = Color(0xFF6750A4)
+                )
+
+                AnimatedVisibility(
+                    visible = errorLoginVisible,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                    ) {
+                        Text(text = "Correo o contraseña erróneos!",
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
 
                 TextField(
                     value = correo,
-                    onValueChange = { correo = it },
+                    onValueChange = { correo = it; errorLoginVisible = false},
                     label = { Text("Correo") },
                     singleLine = true,
                     isError = errorCorreo,
@@ -82,7 +116,7 @@ class MainActivity : ComponentActivity() {
 
                 TextField(
                     value = password,
-                    onValueChange = { password = it },
+                    onValueChange = { password = it; errorLoginVisible = false },
                     label = { Text("Contraseña") },
                     singleLine = true, // Restringe que al apretar enter, se salte abajo
                     visualTransformation = if (isPasswordVisible) {
@@ -109,8 +143,8 @@ class MainActivity : ComponentActivity() {
 
                 Column(Modifier.padding(horizontal = 90.dp)) {
                     Button(onClick = {
-
                         intentoGuardar = true
+                        errorLoginVisible = false
                         if(correo.isNotBlank() && password.isNotBlank()){
                             scope.launch(Dispatchers.IO){
                                 val dao = db.usuarioDao()
@@ -132,11 +166,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                         startActivity(intent)
                                     }else  {
-                                        Toast.makeText(
-                                            context,
-                                            "CORREO O CONTRASEÑA ERRONEOS!",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                        errorLoginVisible = true
                                     }
                                 }
                             }
