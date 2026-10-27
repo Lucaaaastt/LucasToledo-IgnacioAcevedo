@@ -7,11 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.prueba2"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.example.prueba2"
@@ -43,7 +39,7 @@ kotlin {
     jvmToolchain(11)
 }
 
-// AÑADE ESTE BLOQUE: Obliga a Room a generar código en Kotlin nativo
+// Obliga a Room a generar código en Kotlin nativo
 ksp {
     arg("room.generateKotlin", "true")
 }
@@ -51,6 +47,7 @@ ksp {
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
