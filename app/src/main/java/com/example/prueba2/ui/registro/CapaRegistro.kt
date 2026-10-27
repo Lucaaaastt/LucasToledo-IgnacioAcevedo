@@ -133,7 +133,8 @@ class CapaRegistro: ComponentActivity() {
                         supportingText = {
                             if (errorPassword) {
                                 val mensajePassword = when {
-                                    password.isBlank() -> "CONTRASEÑA OBLIGATORIA!"
+                                    password.isEmpty() -> "CONTRASEÑA OBLIGATORIA!"
+                                    password.isBlank() -> "LA CONTRASEÑA NO PUEDE CONTENER SOLO ESPACIOS"
                                     else -> "DEBE POSEER AL MENOS 8 CARACTERES"
                                 }
                                 Text(
@@ -209,6 +210,6 @@ class CapaRegistro: ComponentActivity() {
     }
 
     private fun passwordValida(password: String): Boolean {
-        return password.length >= 8
+        return password.isNotBlank() && password.length >= 8
     }
 }
