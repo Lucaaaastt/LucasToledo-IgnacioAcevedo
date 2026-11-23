@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Usuario::class, Reserva::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(ReservaConverters::class)
@@ -50,13 +50,20 @@ abstract class AppDatabase : RoomDatabase (){
             }
         }
 
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE usuarios ADD COLUMN remotoId INTEGER")
+                db.execSQL("CREATE UNIQUE INDEX index_usuarios_remotoId ON usuarios (remotoId)")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "colegioMP_db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
                 INSTANCE = instance
                 instance
             }

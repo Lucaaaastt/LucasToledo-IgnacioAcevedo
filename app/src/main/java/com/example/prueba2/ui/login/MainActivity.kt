@@ -50,13 +50,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.prueba2.R
 import com.example.prueba2.data.local.AppDatabase
+import com.example.prueba2.data.remote.ErrorUsuarios
+import com.example.prueba2.data.repository.SesionUsuarios
 import com.example.prueba2.ui.menu.Menu
 import com.example.prueba2.ui.menu.MenuADM
 import com.example.prueba2.ui.registro.CapaRegistro
 import com.example.prueba2.ui.registro.CapaRegistroAdm
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,13 +72,14 @@ class MainActivity : ComponentActivity() {
 fun LoginPantalla() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val db = remember { AppDatabase.getDatabase(context) }
+    val sesion = remember { SesionUsuarios(AppDatabase.getDatabase(context)) }
 
     var isPasswordVisible by remember { mutableStateOf(false) }
     var correo by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     var intentoGuardar by remember { mutableStateOf(false) }
+    var ingresando by remember { mutableStateOf(false) }
     var errorLoginVisible by remember { mutableStateOf(false) }
 
     val errorCorreo = intentoGuardar && correo.isBlank()
@@ -192,42 +193,38 @@ fun LoginPantalla() {
                     intentoGuardar = true
                     errorLoginVisible = false
                     if (correo.isNotBlank() && password.isNotBlank()) {
-                        scope.launch(Dispatchers.IO) {
-                            val dao = db.usuarioDao()
-                            val usuarioEncontrado = dao.login(correo.trim(), password)
-
-                            withContext(Dispatchers.Main) {
-                                if (usuarioEncontrado != null) {
-                                    Toast.makeText(
-                                        context,
-                                        "BIENVENIDO ${usuarioEncontrado.nombre}",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-
-                                    val destinoClass = if (usuarioEncontrado.rol == "ADMIN") {
-                                        MenuADM::class.java
-                                    } else {
-                                        Menu::class.java
-                                    }
-                                    val intent = Intent(context, destinoClass).apply {
-                                        putExtra("USER_ID", usuarioEncontrado.id)
-                                        putExtra("USER_ROL", usuarioEncontrado.rol)
-                                        putExtra("USER_NOMBRE", usuarioEncontrado.nombre)
-                                    }
-                                    context.startActivity(intent)
-                                } else {
+                        ingresando = true
+                        val correoIngresado = correo
+                        val passwordIngresada = password
+                        scope.launch {
+                            try {
+                                val usuario = sesion.login(correoIngresado, passwordIngresada)
+                                Toast.makeText(context, "BIENVENIDO ${usuario.nombre}", Toast.LENGTH_LONG).show()
+                                val destino = if (usuario.rol == "ADMIN") MenuADM::class.java else Menu::class.java
+                                context.startActivity(Intent(context, destino).apply {
+                                    putExtra("USER_ID", usuario.id)
+                                    putExtra("USER_ROL", usuario.rol)
+                                    putExtra("USER_NOMBRE", usuario.nombre)
+                                })
+                            } catch (error: ErrorUsuarios) {
+                                if (error.estadoHttp == 401) {
                                     errorLoginVisible = true
+                                } else {
+                                    Toast.makeText(context, error.message, Toast.LENGTH_LONG).show()
                                 }
+                            } finally {
+                                ingresando = false
                             }
                         }
                     }
                 },
+                enabled = !ingresando,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
                 Text(
-                    text = "Ingresar",
+                    text = if (ingresando) "Ingresando…" else "Ingresar",
                     style = MaterialTheme.typography.titleMedium
                 )
             }

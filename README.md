@@ -61,3 +61,13 @@ Tablero de Trello: [Lucas Toledo - Ignacio Acevedo](https://trello.com/b/vVxRqD7
 ## Alcance
 
 Los usuarios y las reservas se almacenan en el dispositivo. No existe sincronizacion entre distintos dispositivos.
+
+## Registro e inicio de sesión con el backend
+
+1. Configura y ejecuta `ms-usuarios` siguiendo su README. Usa cuentas ficticias para la demo.
+2. Ejecuta Android en modo debug en el emulador. La app usa `http://10.0.2.2:8081` para llegar al servicio local.
+3. Registra un solicitante o un administrador e inicia sesión. Para registrar un administrador, ingresa el código configurado en `CODIGO_REGISTRO_ADMIN` en el servicio.
+
+Para usar otro destino, configura `usuariosApiUrl` como propiedad de Gradle. En un teléfono conectado por USB puedes usar `adb reverse tcp:8081 tcp:8081` y compilar con `-PusuariosApiUrl=http://127.0.0.1:8081`. Para release, configura una URL HTTPS.
+
+El registro requiere conexión. Si el servicio no está disponible, el login puede usar una cuenta ya guardada en ese dispositivo. Cuando el servidor rechaza las credenciales, Android muestra el error. Las reservas permanecen en Room/SQLite. Si una cuenta de Room anterior a la integración todavía no existe en el servidor, registra el mismo correo y contraseña e inicia sesión para vincularla sin perder sus reservas locales.

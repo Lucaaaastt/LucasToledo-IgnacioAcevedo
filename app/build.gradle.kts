@@ -1,8 +1,21 @@
+import java.net.URI
+
 plugins {
     alias(libs.plugins.android.application)
     id("org.jetbrains.kotlin.android")
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
+}
+
+val urlUsuarios = providers.gradleProperty("usuariosApiUrl")
+
+fun urlComoLiteral(url: String): String {
+    val uri = if (url.isEmpty()) null else URI(url)
+    require(uri == null || (uri.host != null && uri.userInfo == null &&
+        uri.query == null && uri.fragment == null && uri.scheme in listOf("http", "https"))) {
+        "usuariosApiUrl debe ser una URL HTTP o HTTPS sin credenciales, query ni fragmento."
+    }
+    return "\"${url.trimEnd('/')}\""
 }
 
 android {
@@ -20,7 +33,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "USUARIOS_API_URL",
+                urlComoLiteral(urlUsuarios.orElse("http://10.0.2.2:8081").get()))
+        }
         release {
+            val url = urlUsuarios.orElse("").get()
+            buildConfigField("String", "USUARIOS_API_URL",
+                urlComoLiteral(if (url.startsWith("https://")) url else ""))
             optimization {
                 enable = false
             }
@@ -32,6 +52,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

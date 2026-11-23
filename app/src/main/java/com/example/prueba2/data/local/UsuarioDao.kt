@@ -2,7 +2,7 @@ package com.example.prueba2.data.local
 
 import androidx.room.Dao
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
+import androidx.room.Update
 import androidx.room.Query
 
 @Dao
@@ -11,15 +11,18 @@ interface UsuarioDao {
     @Query("SELECT * FROM usuarios WHERE id = :usuarioId LIMIT 1")
     suspend fun obtenerPorId(usuarioId: Int): Usuario?
 
-    // Registro Usuarios
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Query("SELECT * FROM usuarios WHERE remotoId = :remotoId LIMIT 1")
+    suspend fun obtenerPorIdRemoto(remotoId: Int): Usuario?
+
+    @Insert
     suspend fun registrarUsuario(usuario: Usuario): Long
 
-    // Consultar para la pantalla de Login
+    @Update
+    suspend fun actualizarUsuario(usuario: Usuario)
+
     @Query("SELECT * FROM usuarios WHERE correo = :correo AND password = :password LIMIT 1")
     suspend fun login(correo: String, password: String): Usuario?
 
-    // Verificar si un correo ya existe ante de registrarse
-    @Query("SELECT * FROM usuarios WHERE correo = :correo LIMIT 1")
-    suspend fun obtenerPorCorreo(correo: String): Usuario?
+    @Query("SELECT * FROM usuarios WHERE correo = :correo AND password = :password AND remotoId IS NULL ORDER BY id LIMIT 1")
+    suspend fun obtenerCuentaLocalSinVincular(correo: String, password: String): Usuario?
 }
