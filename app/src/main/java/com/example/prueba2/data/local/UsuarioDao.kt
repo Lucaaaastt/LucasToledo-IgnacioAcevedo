@@ -18,7 +18,7 @@ interface UsuarioDao {
     suspend fun registrarUsuario(usuario: Usuario): Long
 
     @Update
-    suspend fun actualizarUsuario(usuario: Usuario)
+    suspend fun actualizarUsuario(usuario: Usuario): Int
 
     @Query("SELECT * FROM usuarios WHERE correo = :correo AND password = :password LIMIT 1")
     suspend fun login(correo: String, password: String): Usuario?
