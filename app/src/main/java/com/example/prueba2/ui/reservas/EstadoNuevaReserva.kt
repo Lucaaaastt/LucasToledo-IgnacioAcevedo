@@ -17,10 +17,14 @@ data class EstadoNuevaReserva(
     val mostrarResumen: Boolean = false,
     val guardando: Boolean = false,
     val errorGuardado: String? = null,
-    val reservaGuardadaId: Long? = null
+    val reservaGuardadaId: Long? = null,
+    val catalogo: Map<TipoEspacio, List<EspacioReserva>> = TipoEspacio.entries.associateWith(::espaciosDelTipo)
 ) {
+    val espaciosDisponibles: List<EspacioReserva>
+        get() = catalogo[tipo].orEmpty()
+
     val espacioSeleccionado: EspacioReserva?
-        get() = espaciosDelTipo(tipo).find { it.id == espacioId }
+        get() = espaciosDisponibles.find { it.id == espacioId }
 
     val horaInicio: LocalTime?
         get() = interpretarHoraReserva(horaInicioTexto)

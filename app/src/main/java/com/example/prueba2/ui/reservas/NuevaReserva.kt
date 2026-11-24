@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.prueba2.data.local.AppDatabase
+import com.example.prueba2.data.repository.CatalogoEspaciosRepository
 import com.example.prueba2.data.repository.ReservaRepository
 import com.example.prueba2.ui.login.MainActivity
 import com.example.prueba2.ui.theme.Prueba2Theme
@@ -58,12 +59,14 @@ class NuevaReserva : ComponentActivity() {
             finish()
             return
         }
-        val repository = ReservaRepository(AppDatabase.getDatabase(applicationContext))
+        val database = AppDatabase.getDatabase(applicationContext)
+        val repository = ReservaRepository(database)
+        val catalogo = CatalogoEspaciosRepository(database)
         val factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 require(modelClass.isAssignableFrom(NuevaReservaViewModel::class.java))
-                return NuevaReservaViewModel(usuarioId, repository::enviarSolicitud) as T
+                return NuevaReservaViewModel(usuarioId, repository::enviarSolicitud, catalogo = catalogo.cargar()) as T
             }
         }
         val viewModel = ViewModelProvider(this, factory)[NuevaReservaViewModel::class.java]
