@@ -41,7 +41,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelProvider
+import com.example.prueba2.data.local.AppDatabase
+import com.example.prueba2.data.repository.ReporteRepository
 import com.example.prueba2.ui.login.MainActivity
+import com.example.prueba2.ui.reportes.ReporteViewModel
+import com.example.prueba2.ui.reportes.ReporteViewModelFactory
+import com.example.prueba2.ui.reportes.VistaReportesUsuario
 import com.example.prueba2.ui.reservas.MisReservas
 import com.example.prueba2.ui.reservas.NuevaReserva
 
@@ -61,6 +67,12 @@ class Menu : ComponentActivity() {
             ?.trim()
             ?.takeIf { it.isNotBlank() }
             ?: "Solicitante"
+
+        val database = AppDatabase.getDatabase(applicationContext)
+        val reporteViewModel = ViewModelProvider(
+            this,
+            ReporteViewModelFactory(ReporteRepository(database))
+        )[ReporteViewModel::class.java]
 
         setContent {
             val context = LocalContext.current
@@ -150,47 +162,55 @@ class Menu : ComponentActivity() {
                     }
                 }
             ) { innerPadding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(horizontal = 32.dp, vertical = 24.dp)
-                ) {
-                    Text(
-                        text = "Marcela Paz",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    Text(
-                        text = "Hola, $nombreUsuario",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
-                    )
-
-                    Button(
-                        onClick = {
-                            startActivity(Intent(this@Menu, NuevaReserva::class.java).apply {
-                                putExtra("USER_ID", usuarioId)
-                            })
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Nueva reserva")
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            startActivity(Intent(this@Menu, MisReservas::class.java).apply {
-                                putExtra("USER_ID", usuarioId)
-                            })
-                        },
+                if (itemSeleccionado == 0) {
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 12.dp)
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .padding(horizontal = 32.dp, vertical = 24.dp)
                     ) {
-                        Text("Mis reservas")
+                        Text(
+                            text = "Marcela Paz",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        Text(
+                            text = "Hola, $nombreUsuario",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
+                        )
+
+                        Button(
+                            onClick = {
+                                startActivity(Intent(this@Menu, NuevaReserva::class.java).apply {
+                                    putExtra("USER_ID", usuarioId)
+                                })
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Nueva reserva")
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                startActivity(Intent(this@Menu, MisReservas::class.java).apply {
+                                    putExtra("USER_ID", usuarioId)
+                                })
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp)
+                        ) {
+                            Text("Mis reservas")
+                        }
                     }
+                } else {
+                    VistaReportesUsuario(
+                        usuarioId = usuarioId,
+                        viewModel = reporteViewModel,
+                        modifier = Modifier.padding(innerPadding)
+                    )
                 }
             }
         }

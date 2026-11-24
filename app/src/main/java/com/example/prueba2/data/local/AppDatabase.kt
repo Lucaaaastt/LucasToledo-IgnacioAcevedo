@@ -9,14 +9,15 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Usuario::class, Reserva::class],
-    version = 4,
+    entities = [Usuario::class, Reserva::class, ReporteIncidencia::class],
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(ReservaConverters::class)
-abstract class AppDatabase : RoomDatabase (){
+abstract class AppDatabase : RoomDatabase() {
     abstract fun usuarioDao(): UsuarioDao
     abstract fun reservaDao(): ReservaDao
+    abstract fun reporteDao(): ReporteDao
 
     companion object {
         @Volatile
@@ -57,13 +58,37 @@ abstract class AppDatabase : RoomDatabase (){
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS reportes_incidencia (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        usuarioId INTEGER NOT NULL,
+                        espacioId TEXT NOT NULL,
+                        descripcion TEXT NOT NULL,
+                        fotoUri TEXT,
+                        estado TEXT NOT NULL,
+                        comentarioAdmin TEXT,
+                        fechaCreacion INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "colegioMP_db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
+                ).addMigrations(
+                    MIGRATION_1_2,
+                    MIGRATION_2_3,
+                    MIGRATION_3_4,
+                    MIGRATION_4_5
+                ).build()
                 INSTANCE = instance
                 instance
             }
