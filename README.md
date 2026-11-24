@@ -81,4 +81,10 @@ usa la última copia guardada. Una instalación sin copia usa el catálogo inclu
 En debug, el emulador usa `http://10.0.2.2:8080`. Puedes cambiar el destino con
 `-PespaciosApiUrl=URL`; para release usa HTTPS. En un teléfono por USB,
 usa `adb reverse tcp:8080 tcp:8080` y `-PespaciosApiUrl=http://127.0.0.1:8080`.
-El envío y la aprobación de reservas todavía se guardan en el dispositivo.
+## Reservas compartidas
+
+Las cuentas vinculadas al servidor crean y consultan sus solicitudes en
+`ms-espacios-reservas`. El administrador puede verlas y decidir desde otro teléfono.
+Para estas operaciones ambos servicios deben estar disponibles. Las reservas anteriores
+de Room se conservan y siguen siendo locales. Las cuentas solo locales mantienen su
+flujo anterior.

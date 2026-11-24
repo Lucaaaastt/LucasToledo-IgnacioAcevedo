@@ -42,10 +42,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.flowWithLifecycle
 import com.example.prueba2.data.local.AppDatabase
 import com.example.prueba2.data.local.EstadoReserva
-import com.example.prueba2.data.repository.ReservaRepository
+import com.example.prueba2.data.repository.ReservasCompartidas
 import com.example.prueba2.ui.login.MainActivity
 import com.example.prueba2.ui.theme.Prueba2Theme
 import com.example.prueba2.utils.CalendarioReservas
+import com.example.prueba2.utils.Notificaciones
 
 class MisReservas : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -64,13 +65,23 @@ class MisReservas : ComponentActivity() {
             finish()
             return
         }
-        val repository = ReservaRepository(AppDatabase.getDatabase(applicationContext))
+        val repository = ReservasCompartidas(AppDatabase.getDatabase(applicationContext))
         val factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 require(modelClass.isAssignableFrom(MisReservasViewModel::class.java))
                 return if (esAdministrador) {
-                    MisReservasViewModel.paraAdministrador(repository.obtenerPendientes(usuarioId)) { reservaId, decision ->
+                    MisReservasViewModel.paraAdministrador(
+                        repository.obtenerPendientes(usuarioId),
+                        decisionGuardada = { reserva, estado ->
+                            val contexto = applicationContext
+                            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                                    contexto, android.Manifest.permission.POST_NOTIFICATIONS
+                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                                Notificaciones.enviarNotificacionReserva(contexto, reserva.espacio, estado)
+                            }
+                        }
+                    ) { reservaId, decision ->
                         repository.resolverSolicitud(usuarioId, reservaId, decision)
                     }
                 } else {
