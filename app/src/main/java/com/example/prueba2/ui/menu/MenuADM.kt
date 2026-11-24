@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -39,7 +40,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelProvider
+import com.example.prueba2.data.local.AppDatabase
+import com.example.prueba2.data.repository.ReporteRepository
 import com.example.prueba2.ui.login.MainActivity
+import com.example.prueba2.ui.reportes.ReporteViewModel
+import com.example.prueba2.ui.reportes.ReporteViewModelFactory
+import com.example.prueba2.ui.reportes.VistaReportesAdmin
 import com.example.prueba2.ui.reservas.MisReservas
 
 class MenuADM : ComponentActivity() {
@@ -52,10 +59,18 @@ class MenuADM : ComponentActivity() {
             )
         )
 
+        val administradorId = intent.getIntExtra("USER_ID", -1)
+
         val nombreUsuario = intent.getStringExtra("USER_NOMBRE")
             ?.trim()
             ?.takeIf { it.isNotBlank() }
             ?: "ADMIN"
+
+        val database = AppDatabase.getDatabase(applicationContext)
+        val reporteViewModel = ViewModelProvider(
+            this,
+            ReporteViewModelFactory(ReporteRepository(database, applicationContext))
+        )[ReporteViewModel::class.java]
 
         setContent {
             val context = LocalContext.current
@@ -134,56 +149,68 @@ class MenuADM : ComponentActivity() {
                             selected = itemSeleccionado == 0,
                             onClick = { itemSeleccionado = 0 },
                             icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
-                            label = { Text("Inicio")}
+                            label = { Text("Inicio") }
+                        )
+                        NavigationBarItem(
+                            selected = itemSeleccionado == 1,
+                            onClick = { itemSeleccionado = 1 },
+                            icon = { Icon(Icons.Default.Folder, contentDescription = "Reportes") },
+                            label = { Text("Reportes") }
                         )
                     }
                 }
             ) { innerPadding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(horizontal = 32.dp, vertical = 24.dp)
-                ) {
-                    Text(
-                        text = "Marcela Paz",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    Text(
-                        text = "Hola, $nombreUsuario",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
-                    )
-
-                    OutlinedButton(
-                        onClick = {
-                            val intent = Intent(this@MenuADM, MisReservas::class.java).apply {
-                                putExtra("USER_ID", this@MenuADM.intent.getIntExtra("USER_ID", -1))
-                                putExtra("USER_ROL", "ADMIN")
-                            }
-                            startActivity(intent)
-                        },
+                if (itemSeleccionado == 0) {
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 12.dp)
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .padding(horizontal = 32.dp, vertical = 24.dp)
                     ) {
-                        Text("Revisar Solicitudes")
-                    }
+                        Text(
+                            text = "Marcela Paz",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
 
-                    TextButton(
-                        onClick = { mostrarAviso = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 24.dp)
-                    ) {
-                        Text("Cerrar sesión")
+                        Text(
+                            text = "Hola, $nombreUsuario",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
+                        )
+
+                        OutlinedButton(
+                            onClick = {
+                                val intent = Intent(this@MenuADM, MisReservas::class.java).apply {
+                                    putExtra("USER_ID", administradorId)
+                                    putExtra("USER_ROL", "ADMIN")
+                                }
+                                startActivity(intent)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp)
+                        ) {
+                            Text("Revisar Solicitudes")
+                        }
+
+                        TextButton(
+                            onClick = { mostrarAviso = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 24.dp)
+                        ) {
+                            Text("Cerrar sesión")
+                        }
                     }
+                } else {
+                    VistaReportesAdmin(
+                        administradorId = administradorId,
+                        viewModel = reporteViewModel,
+                        modifier = Modifier.padding(innerPadding)
+                    )
                 }
             }
-
         }
     }
 }
-//Column(Modifier.padding(top = 100.dp, start = 32.dp, end = 32.dp )) {

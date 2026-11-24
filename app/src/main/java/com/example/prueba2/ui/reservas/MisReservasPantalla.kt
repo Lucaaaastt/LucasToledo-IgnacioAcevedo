@@ -149,11 +149,11 @@ fun MisReservasPantalla(
                         Text("Cargando solicitudes…")
                     }
                 }
-            } else if (errorCarga != null) {
-                item {
-                    Text(errorCarga, color = MaterialTheme.colorScheme.error)
-                }
-            } else if (reservas.isEmpty()) {
+            }
+            errorCarga?.let { mensaje ->
+                item { Text(mensaje, color = MaterialTheme.colorScheme.error) }
+            }
+            if (!cargando && errorCarga == null && reservas.isEmpty()) {
                 item {
                     Text(
                         text = mensajeVacio,
@@ -200,16 +200,7 @@ fun MisReservasPantalla(
             },
             confirmButton = {
                 TextButton(
-                    onClick = {
-                        if (seleccionada != null && destino != null){
-                            Notificaciones.enviarNotificacionReserva(
-                                context = context,
-                                espacio = seleccionada.espacio,
-                                estado = destino
-                            )
-                        }
-                        onConfirmarDecision()
-                    },
+                    onClick = onConfirmarDecision,
                     enabled = !decision.guardando
                 ) {
                     Text(if (aprobar) "Aprobar" else "Rechazar")

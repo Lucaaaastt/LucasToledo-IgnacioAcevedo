@@ -9,14 +9,15 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Usuario::class, Reserva::class, EspacioCatalogoLocal::class],
-    version = 5,
+    entities = [Usuario::class, Reserva::class, EspacioCatalogoLocal::class, ReporteIncidencia::class],
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(ReservaConverters::class)
 abstract class AppDatabase : RoomDatabase (){
     abstract fun usuarioDao(): UsuarioDao
     abstract fun reservaDao(): ReservaDao
+    abstract fun reporteDao(): ReporteDao
     internal abstract fun catalogoEspaciosDao(): CatalogoEspaciosDao
 
     companion object {
@@ -73,13 +74,40 @@ abstract class AppDatabase : RoomDatabase (){
             }
         }
 
+        // Las dos ramas tenían versión 5: una con catálogo y otra con reportes.
+        // Crear lo que falta permite abrir cualquiera de esas instalaciones sin borrar datos.
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS catalogo_espacios (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        nombre TEXT NOT NULL,
+                        tipo TEXT NOT NULL,
+                        orden INTEGER NOT NULL
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS reportes_incidencia (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        usuarioId INTEGER NOT NULL,
+                        espacioId TEXT NOT NULL,
+                        descripcion TEXT NOT NULL,
+                        fotoUri TEXT,
+                        estado TEXT NOT NULL,
+                        comentarioAdmin TEXT,
+                        fechaCreacion INTEGER NOT NULL
+                    )
+                """.trimIndent())
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "colegioMP_db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build()
                 INSTANCE = instance
                 instance
             }

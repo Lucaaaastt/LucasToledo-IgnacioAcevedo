@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.prueba2.data.catalogo.TipoEspacio
 import com.example.prueba2.data.catalogo.EspacioReserva
 import com.example.prueba2.data.local.Reserva
+import com.example.prueba2.data.remote.ErrorReservaRemota
 import com.example.prueba2.data.repository.ReservaNoDisponibleException
 import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
@@ -125,6 +126,8 @@ class NuevaReservaViewModel(
                 throw cancelacion
             } catch (_: ReservaNoDisponibleException) {
                 estado = estado.copy(errorGuardado = "El espacio ya está ocupado por una solicitud pendiente o una reserva aprobada para ese horario. Elige otro horario o espacio.")
+            } catch (error: ErrorReservaRemota) {
+                estado = estado.copy(errorGuardado = error.message)
             } catch (_: Exception) {
                 estado = estado.copy(errorGuardado = "No se pudo enviar la solicitud. Tus datos se conservaron; puedes volver a intentarlo.")
             } finally {
