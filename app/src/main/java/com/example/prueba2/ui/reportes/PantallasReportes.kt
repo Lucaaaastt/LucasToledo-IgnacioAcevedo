@@ -4,6 +4,9 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
+import android.util.Base64
+import java.io.ByteArrayInputStream
+import java.io.InputStream
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -66,6 +69,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.example.prueba2.data.catalogo.EspacioReserva
 import com.example.prueba2.data.catalogo.TipoEspacio
+import com.example.prueba2.data.local.AppDatabase
+import com.example.prueba2.data.repository.CatalogoEspaciosRepository
 import com.example.prueba2.data.catalogo.espaciosDelTipo
 import com.example.prueba2.data.local.EstadoReporte
 import com.example.prueba2.data.local.ReporteConAutor
@@ -163,7 +168,10 @@ fun VistaReportesUsuario(
         }
     }
 
-    val listaEspacios = remember(tipoSeleccionado) { espaciosDelTipo(tipoSeleccionado) }
+    val catalogo by remember {
+        CatalogoEspaciosRepository(AppDatabase.getDatabase(context)).cargar()
+    }.collectAsState(initial = TipoEspacio.entries.associateWith(::espaciosDelTipo))
+    val listaEspacios = catalogo[tipoSeleccionado].orEmpty()
 
     LazyColumn(
         modifier = modifier
@@ -183,6 +191,9 @@ fun VistaReportesUsuario(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            TextButton(onClick = { viewModel.cargarReportesUsuario(usuarioId) }, enabled = !cargando) {
+                Text("Actualizar reportes")
+            }
         }
 
         item {
@@ -203,7 +214,7 @@ fun VistaReportesUsuario(
                         textoOpcion = { it.etiqueta },
                         alSeleccionar = { nuevoTipo ->
                             tipoSeleccionado = nuevoTipo
-                            val disponibles = espaciosDelTipo(nuevoTipo)
+                            val disponibles = catalogo[nuevoTipo].orEmpty()
                             espacioSeleccionado = if (disponibles.size == 1) disponibles.first() else null
                         }
                     )
@@ -436,6 +447,9 @@ fun VistaReportesAdmin(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            TextButton(onClick = { viewModel.cargarTodosLosReportes(administradorId) }, enabled = !cargando) {
+                Text("Actualizar reportes")
+            }
         }
 
         if (mensajeError != null) {
@@ -682,9 +696,8 @@ private fun ImagenEvidencia(
     val bitmap by produceState<ImageBitmap?>(initialValue = null, uriString) {
         value = withContext(Dispatchers.IO) {
             try {
-                val uri = Uri.parse(uriString)
                 val opcionesBounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                context.contentResolver.openInputStream(uri)?.use { stream ->
+                abrirImagen(context, uriString)?.use { stream ->
                     BitmapFactory.decodeStream(stream, null, opcionesBounds)
                 }
 
@@ -694,7 +707,7 @@ private fun ImagenEvidencia(
                 }
 
                 val opcionesDecode = BitmapFactory.Options().apply { inSampleSize = escala }
-                context.contentResolver.openInputStream(uri)?.use { stream ->
+                abrirImagen(context, uriString)?.use { stream ->
                     BitmapFactory.decodeStream(stream, null, opcionesDecode)?.asImageBitmap()
                 }
             } catch (_: Exception) {
@@ -712,6 +725,13 @@ private fun ImagenEvidencia(
         )
     }
 }
+
+private fun abrirImagen(context: Context, uri: String): InputStream? =
+    if (uri.startsWith("data:image/jpeg;base64,")) {
+        ByteArrayInputStream(Base64.decode(uri.substringAfter(','), Base64.DEFAULT))
+    } else {
+        context.contentResolver.openInputStream(Uri.parse(uri))
+    }
 
 private fun crearArchivoFoto(context: Context): File {
     val carpeta = File(context.filesDir, "reportes_fotos")

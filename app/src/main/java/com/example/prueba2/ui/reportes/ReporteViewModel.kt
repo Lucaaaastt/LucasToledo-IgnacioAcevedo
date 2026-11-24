@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.prueba2.data.local.ReporteConAutor
 import com.example.prueba2.data.local.ReporteIncidencia
 import com.example.prueba2.data.repository.ReporteRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,6 +37,7 @@ class ReporteViewModel(
     private var jobAdmin: Job? = null
 
     fun cargarReportesUsuario(usuarioId: Int) {
+        _mensajeError.value = null
         jobUsuario?.cancel()
         jobUsuario = viewModelScope.launch {
             repository.obtenerPorUsuario(usuarioId)
@@ -45,6 +47,7 @@ class ReporteViewModel(
     }
 
     fun cargarTodosLosReportes(administradorId: Int) {
+        _mensajeError.value = null
         jobAdmin?.cancel()
         jobAdmin = viewModelScope.launch {
             repository.obtenerTodosConAutor(administradorId)
@@ -59,6 +62,8 @@ class ReporteViewModel(
         descripcion: String,
         fotoUri: String?
     ) {
+        if (_cargando.value) return
+        _cargando.value = true
         viewModelScope.launch {
             _cargando.value = true
             _mensajeError.value = null
@@ -72,6 +77,8 @@ class ReporteViewModel(
                 )
                 repository.enviarReporte(nuevoReporte)
                 _mensajeExito.value = "Reporte de incidencia enviado correctamente."
+            } catch (cancelacion: CancellationException) {
+                throw cancelacion
             } catch (e: Exception) {
                 _mensajeError.value = e.message ?: "No se pudo enviar el reporte."
             } finally {
@@ -85,6 +92,8 @@ class ReporteViewModel(
         reporteId: Long,
         comentario: String
     ) {
+        if (_cargando.value) return
+        _cargando.value = true
         viewModelScope.launch {
             _cargando.value = true
             _mensajeError.value = null
@@ -92,6 +101,8 @@ class ReporteViewModel(
             try {
                 repository.responderReporte(administradorId, reporteId, comentario)
                 _mensajeExito.value = "Respuesta enviada y reporte marcado como revisado."
+            } catch (cancelacion: CancellationException) {
+                throw cancelacion
             } catch (e: Exception) {
                 _mensajeError.value = e.message ?: "No se pudo guardar la respuesta."
             } finally {

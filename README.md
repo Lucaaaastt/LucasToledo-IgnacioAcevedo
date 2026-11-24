@@ -14,7 +14,8 @@ Aplicacion Android para organizar las reservas de espacios de la escuela Marcela
 - Consulta de reservas personales.
 - Aprobacion y rechazo de solicitudes por el administrador.
 - Notificaciones locales.
-- Almacenamiento local con Room sobre SQLite.
+- Reportes de incidencias con foto opcional y respuesta del administrador.
+- Persistencia compartida en Neon y compatibilidad con datos locales anteriores en Room.
 
 ## Flujo de uso
 
@@ -31,12 +32,14 @@ com.example.prueba2/
 ├── data/
 │   ├── catalogo/     Espacios disponibles.
 │   ├── local/        Base de datos, entidades y DAO.
-│   └── repository/   Reglas y operaciones de reservas.
+│   ├── remote/       Clientes HTTP de usuarios, espacios, reservas y reportes.
+│   └── repository/   Operaciones locales y compartidas.
 ├── ui/
 │   ├── login/        Inicio de sesion.
 │   ├── registro/     Registro de usuarios.
 │   ├── menu/         Menus de ambos roles.
 │   ├── reservas/     Pantallas, ViewModels y validaciones.
+│   ├── reportes/     Incidencias, fotos y respuestas.
 │   └── theme/        Colores, tipografia y tema.
 └── utils/            Notificaciones.
 ```
@@ -52,7 +55,7 @@ El flujo de reservas utiliza MVVM para separar la interfaz, el estado y el acces
 5. Ejecutar el modulo app con el boton Run.
 6. Registrar una cuenta e iniciar sesion para utilizar la aplicacion.
 
-Los datos se guardan localmente. Una instalacion nueva no incluye usuarios ni reservas.
+Antes de usar las funciones compartidas, ejecutar ambos servicios siguiendo el [README del backend](../backend/README.md). Una instalación nueva no incluye cuentas guardadas localmente.
 
 ## Planificacion
 
@@ -60,7 +63,7 @@ Tablero de Trello: [Lucas Toledo - Ignacio Acevedo](https://trello.com/b/vVxRqD7
 
 ## Alcance
 
-Los usuarios y las reservas se almacenan en el dispositivo. No existe sincronizacion entre distintos dispositivos.
+Las cuentas conectadas al backend guardan sus nuevos registros, reservas y reportes en PostgreSQL/Neon. Room conserva las cuentas y los datos locales que ya existían, además de la copia del catálogo. Los datos anteriores no se suben automáticamente al servidor.
 
 ## Registro e inicio de sesión con el backend
 
@@ -70,7 +73,7 @@ Los usuarios y las reservas se almacenan en el dispositivo. No existe sincroniza
 
 Para usar otro destino, configura `usuariosApiUrl` como propiedad de Gradle. En un teléfono conectado por USB puedes usar `adb reverse tcp:8081 tcp:8081` y compilar con `-PusuariosApiUrl=http://127.0.0.1:8081`. Para release, configura una URL HTTPS.
 
-El registro requiere conexión. Si el servicio no está disponible, el login puede usar una cuenta ya guardada en ese dispositivo. Cuando el servidor rechaza las credenciales, Android muestra el error. Las reservas permanecen en Room/SQLite. Si una cuenta de Room anterior a la integración todavía no existe en el servidor, registra el mismo correo y contraseña e inicia sesión para vincularla sin perder sus reservas locales.
+El registro requiere conexión. Si el servicio no está disponible, el login puede usar una cuenta ya guardada en ese dispositivo. Cuando el servidor rechaza las credenciales, Android muestra el error. Las cuentas conectadas usan reservas compartidas; las anteriores de Room se conservan. Si una cuenta de Room anterior a la integración todavía no existe en el servidor, registra el mismo correo y contraseña e inicia sesión para vincularla sin perder sus reservas locales.
 
 ## Catálogo de espacios
 
@@ -88,3 +91,19 @@ Las cuentas vinculadas al servidor crean y consultan sus solicitudes en
 Para estas operaciones ambos servicios deben estar disponibles. Las reservas anteriores
 de Room se conservan y siguen siendo locales. Las cuentas solo locales mantienen su
 flujo anterior.
+
+## Reportes de incidencias
+
+La pestaña **Reportes** conserva las pantallas de la rama `feat/reportes`. El solicitante selecciona un espacio, describe el problema y puede adjuntar una foto de cámara o galería. El administrador consulta los reportes y escribe una respuesta.
+
+Las cuentas vinculadas al backend guardan los nuevos reportes, la foto y la respuesta en Neon mediante `ms-espacios-reservas`. Las fotos se reducen y envían como JPEG, hasta 1 MB. Las cuentas y reportes anteriores de Room mantienen su funcionamiento local. Los reportes se consultan al entrar, al guardar y con **Actualizar reportes**. Las reservas compartidas se consultan cada cinco segundos mientras su pantalla está visible. Si falla la conexión se muestra el error para reintentar.
+
+La integración conserva ambas variantes de Room versión 5 (catálogo o reportes) al abrir la versión 6, sin borrar usuarios ni cambiar contraseñas.
+
+## Verificación
+
+```bash
+bash ./gradlew :app:assembleDebug :app:lintDebug :app:assembleDebugAndroidTest
+```
+
+Con un emulador conectado, `bash ./gradlew :app:connectedDebugAndroidTest` ejecuta las pruebas de Room y catálogo. La prueba remota de reportes se omite por defecto; solo se activa al pasar el argumento `neonPrueba` explícitamente y necesita ambos servicios de prueba en los puertos 18081 y 18080.

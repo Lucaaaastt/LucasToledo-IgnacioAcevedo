@@ -7,13 +7,13 @@ import com.example.prueba2.data.local.ReservaConSolicitante
 import com.example.prueba2.data.local.Usuario
 import com.example.prueba2.data.remote.ErrorReservaRemota
 import com.example.prueba2.data.remote.ReservasApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 
 internal class ReservasCompartidas(private val database: AppDatabase) {
@@ -70,8 +70,15 @@ internal class ReservasCompartidas(private val database: AppDatabase) {
     }
 
     private fun remotas(usuario: Usuario, pendientes: Boolean) =
-        recargar.map { api.listar(usuario, pendientes) }
+        combine(recargar, actualizaciones()) { _, _ -> api.listar(usuario, pendientes) }
 
     private suspend fun obtenerUsuario(id: Int): Usuario =
         checkNotNull(database.usuarioDao().obtenerPorId(id)) { "Vuelve a iniciar sesión." }
+
+    private fun actualizaciones(): Flow<Unit> = flow {
+        while (true) {
+            emit(Unit)
+            delay(5_000)
+        }
+    }
 }

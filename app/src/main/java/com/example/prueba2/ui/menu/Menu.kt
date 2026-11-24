@@ -71,7 +71,7 @@ class Menu : ComponentActivity() {
         val database = AppDatabase.getDatabase(applicationContext)
         val reporteViewModel = ViewModelProvider(
             this,
-            ReporteViewModelFactory(ReporteRepository(database))
+            ReporteViewModelFactory(ReporteRepository(database, applicationContext))
         )[ReporteViewModel::class.java]
 
         setContent {
