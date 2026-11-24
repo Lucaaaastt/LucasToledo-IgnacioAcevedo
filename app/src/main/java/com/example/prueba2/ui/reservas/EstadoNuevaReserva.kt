@@ -18,6 +18,7 @@ data class EstadoNuevaReserva(
     val guardando: Boolean = false,
     val errorGuardado: String? = null,
     val reservaGuardadaId: Long? = null,
+    val pendienteEnvio: Boolean = false,
     val catalogo: Map<TipoEspacio, List<EspacioReserva>> = TipoEspacio.entries.associateWith(::espaciosDelTipo)
 ) {
     val espaciosDisponibles: List<EspacioReserva>

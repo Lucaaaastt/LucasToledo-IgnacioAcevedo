@@ -91,6 +91,7 @@ fun VistaReportesUsuario(
     val context = LocalContext.current
     val reportes by viewModel.reportesUsuario.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
+    val avisoConexion by viewModel.avisoConexion.collectAsState()
     val mensajeExito by viewModel.mensajeExito.collectAsState()
     val mensajeError by viewModel.mensajeError.collectAsState()
 
@@ -307,7 +308,7 @@ fun VistaReportesUsuario(
                         onClick = {
                             viewModel.enviarReporte(
                                 usuarioId = usuarioId,
-                                espacioId = espacioSeleccionado?.nombre.orEmpty(),
+                                espacioId = espacioSeleccionado?.id.orEmpty(),
                                 descripcion = descripcion,
                                 fotoUri = fotoUri
                             )
@@ -331,12 +332,13 @@ fun VistaReportesUsuario(
         item {
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             Text(
-                text = "Mis reportes enviados (${reportes.size})",
+                text = "Mis reportes (${reportes.size})",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
         }
 
+        avisoConexion?.let { aviso -> item { Text(aviso, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
         if (reportes.isEmpty()) {
             item {
                 Text(
@@ -347,7 +349,7 @@ fun VistaReportesUsuario(
             }
         } else {
             items(reportes, key = { it.id }) { reporte ->
-                TarjetaReporteUsuario(reporte = reporte)
+                TarjetaReporteUsuario(reporte = reporte, onDescartar = { viewModel.descartarError(usuarioId, reporte) })
             }
         }
     }
@@ -362,6 +364,7 @@ fun VistaReportesAdmin(
     val context = LocalContext.current
     val todosLosReportes by viewModel.todosLosReportes.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
+    val avisoConexion by viewModel.avisoConexion.collectAsState()
     val mensajeExito by viewModel.mensajeExito.collectAsState()
     val mensajeError by viewModel.mensajeError.collectAsState()
 
@@ -462,6 +465,7 @@ fun VistaReportesAdmin(
             }
         }
 
+        avisoConexion?.let { aviso -> item { Text(aviso, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
         if (todosLosReportes.isEmpty()) {
             item {
                 Text(
@@ -486,7 +490,7 @@ fun VistaReportesAdmin(
 }
 
 @Composable
-private fun TarjetaReporteUsuario(reporte: ReporteIncidencia) {
+private fun TarjetaReporteUsuario(reporte: ReporteIncidencia, onDescartar: () -> Unit) {
     val esRevisado = reporte.estado == EstadoReporte.REVISADO
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -508,11 +512,22 @@ private fun TarjetaReporteUsuario(reporte: ReporteIncidencia) {
                 )
                 AssistChip(
                     onClick = {},
-                    label = { Text(if (esRevisado) "REVISADO" else "PENDIENTE") },
+                    label = { Text(when {
+                        reporte.errorEnvio != null -> "NO ENVIADO"
+                        reporte.pendienteEnvio -> "PENDIENTE DE ENVÍO"
+                        esRevisado -> "REVISADO"
+                        else -> "PENDIENTE"
+                    }) },
                     leadingIcon = if (esRevisado) {
                         { Icon(Icons.Default.Check, contentDescription = null) }
                     } else null
                 )
+            }
+
+            if (reporte.pendienteEnvio) Text("Guardado en el dispositivo. Se enviará al recuperar conexión.")
+            reporte.errorEnvio?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
+                TextButton(onClick = onDescartar) { Text("Descartar reporte no enviado") }
             }
 
             Text(

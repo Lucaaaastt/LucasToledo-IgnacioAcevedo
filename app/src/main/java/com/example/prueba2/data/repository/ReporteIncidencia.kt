@@ -1,5 +1,6 @@
 package com.example.prueba2.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -19,7 +20,11 @@ data class ReporteIncidencia(
     val fotoUri: String? = null,
     val estado: EstadoReporte = EstadoReporte.PENDIENTE,
     val comentarioAdmin: String? = null,
-    val fechaCreacion: Long = System.currentTimeMillis()
+    val fechaCreacion: Long = System.currentTimeMillis(),
+    @ColumnInfo(defaultValue = "0")
+    val pendienteEnvio: Boolean = false,
+    @ColumnInfo(defaultValue = "NULL")
+    val errorEnvio: String? = null
 )
 
 data class ReporteConAutor(

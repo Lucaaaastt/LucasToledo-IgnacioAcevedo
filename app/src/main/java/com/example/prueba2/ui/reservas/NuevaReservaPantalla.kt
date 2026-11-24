@@ -199,7 +199,7 @@ fun NuevaReservaPantalla(
                 Text("Revisar solicitud")
             }
             Text(
-                text = "* Campos obligatorios. La solicitud requiere aprobación del administrador. Al enviarla, el espacio queda ocupado para la fecha y el horario solicitados.",
+                text = "* Campos obligatorios. La solicitud requiere aprobación del administrador. El horario se bloquea cuando el servidor recibe y acepta la solicitud.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -219,7 +219,7 @@ fun NuevaReservaPantalla(
                     Text("Fecha: ${estado.fecha?.format(formatoFechaReserva)}")
                     Text("Horario: ${estado.horaInicio?.format(formatoHoraReserva)} – ${estado.horaTermino?.format(formatoHoraReserva)}")
                     Text("Motivo: ${estado.motivo.trim()}")
-                    Text("Al enviar, la solicitud se guardará como pendiente de aprobación y el espacio quedará ocupado para la fecha y el horario solicitados.")
+                    Text("Se intentará enviar al servidor. Sin conexión quedará guardada para enviarla después; el horario solo se bloqueará cuando el servidor la acepte.")
                     estado.errorGuardado?.let {
                         Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.semantics { semanticError(it) })
                     }
@@ -242,8 +242,8 @@ fun NuevaReservaPantalla(
     if (estado.reservaGuardadaId != null) {
         AlertDialog(
             onDismissRequest = onCerrarExito,
-            title = { Text("Solicitud enviada") },
-            text = { Text("Tu solicitud se guardó y está pendiente de aprobación del administrador. El espacio ya está ocupado para la fecha y el horario solicitados.") },
+            title = { Text(if (estado.pendienteEnvio) "Solicitud guardada en el dispositivo" else "Solicitud enviada") },
+            text = { Text(if (estado.pendienteEnvio) "Se enviará al recuperar conexión con la app abierta. El servidor comprobará el horario antes de aceptarla; aún no está reservado." else "Tu solicitud fue recibida por el servidor y está pendiente de aprobación del administrador. El horario quedó ocupado.") },
             confirmButton = {
                 TextButton(onClick = onCerrarExito) { Text("Ver mis reservas") }
             }

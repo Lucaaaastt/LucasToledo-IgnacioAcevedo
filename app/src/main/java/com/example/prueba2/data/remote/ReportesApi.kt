@@ -19,20 +19,31 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 
-internal class ErrorReporteRemoto(mensaje: String) : Exception(mensaje)
+internal class ErrorReporteRemoto(mensaje: String, val servicioInaccesible: Boolean = false) : Exception(mensaje)
 
 internal class ReportesApi(
     private val context: Context,
     private val baseUrl: String = BuildConfig.ESPACIOS_API_URL
 ) {
-    suspend fun crear(usuario: Usuario, reporte: ReporteIncidencia): Long = withContext(Dispatchers.IO) {
-        val datos = JSONObject().put("espacioId", reporte.espacioId).put("descripcion", reporte.descripcion.trim())
-        fotoBase64(reporte.fotoUri)?.let { datos.put("fotoBase64", it) }
-        JSONObject(enviar(usuario, "POST", "", 201, datos)).getLong("id")
+    suspend fun preparar(reporte: ReporteIncidencia): JSONObject = withContext(Dispatchers.IO) {
+        JSONObject().put("espacioId", reporte.espacioId).put("descripcion", reporte.descripcion.trim()).also { datos ->
+            fotoBase64(reporte.fotoUri)?.let { datos.put("fotoBase64", it) }
+        }
     }
 
-    suspend fun listar(usuario: Usuario, todos: Boolean): List<ReporteConAutor> {
-        val datos = JSONArray(enviar(usuario, "GET", if (todos) "" else "/mios", 200))
+    suspend fun crear(usuario: Usuario, reporte: ReporteIncidencia): Long = crearDatos(usuario, preparar(reporte))
+
+    suspend fun crearDatos(usuario: Usuario, datos: JSONObject): Long =
+        JSONObject(enviar(usuario, "POST", "", 201, datos)).getLong("id")
+
+    suspend fun obtenerListado(usuario: Usuario, todos: Boolean): String =
+        enviar(usuario, "GET", if (todos) "" else "/mios", 200)
+
+    suspend fun listar(usuario: Usuario, todos: Boolean): List<ReporteConAutor> =
+        leerListado(usuario, obtenerListado(usuario, todos))
+
+    fun leerListado(usuario: Usuario, json: String): List<ReporteConAutor> {
+        val datos = JSONArray(json)
         return List(datos.length()) { i ->
             val fila = datos.getJSONObject(i)
             ReporteConAutor(
@@ -94,16 +105,17 @@ internal class ReportesApi(
                         conexion.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
                         conexion.outputStream.use { it.write(datos.toString().toByteArray(Charsets.UTF_8)) }
                     }
-                    if (conexion.responseCode != esperado) throw ErrorReporteRemoto(when (conexion.responseCode) {
+                    val estado = conexion.responseCode
+                    if (estado != esperado) throw ErrorReporteRemoto(when (estado) {
                         400 -> "Revisa el espacio, la descripción y la foto del reporte."
                         401, 403 -> "La cuenta no tiene acceso. Vuelve a iniciar sesión."
                         404 -> "El reporte o el espacio ya no está disponible."
                         else -> "No se pudo guardar o consultar el reporte. Intenta nuevamente."
-                    })
+                    }, servicioInaccesible = estado >= 500)
                     if (esperado == 204) "" else conexion.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
                 } finally { conexion.disconnect() }
             } catch (_: IOException) {
-                throw ErrorReporteRemoto("No se pudo conectar al servicio de reportes.")
+                throw ErrorReporteRemoto("No se pudo conectar al servicio de reportes.", servicioInaccesible = true)
             }
         }
 }

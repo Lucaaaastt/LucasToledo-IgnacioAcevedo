@@ -63,7 +63,7 @@ Tablero de Trello: [Lucas Toledo - Ignacio Acevedo](https://trello.com/b/vVxRqD7
 
 ## Alcance
 
-Las cuentas conectadas al backend guardan sus nuevos registros, reservas y reportes en PostgreSQL/Neon. Room conserva las cuentas y los datos locales que ya existían, además de la copia del catálogo. Los datos anteriores no se suben automáticamente al servidor.
+Las cuentas conectadas al backend guardan sus nuevos registros, reservas y reportes en PostgreSQL/Neon. Room conserva las cuentas y los datos locales que ya existían, además de la copia del catálogo. Los datos anteriores no se suben automáticamente al servidor. Las nuevas operaciones de una cuenta conectada tienen una cola de envío en Room para cuando no hay conexión.
 
 ## Registro e inicio de sesión con el backend
 
@@ -88,7 +88,7 @@ usa `adb reverse tcp:8080 tcp:8080` y `-PespaciosApiUrl=http://127.0.0.1:8080`.
 
 Las cuentas vinculadas al servidor crean y consultan sus solicitudes en
 `ms-espacios-reservas`. El administrador puede verlas y decidir desde otro teléfono.
-Para estas operaciones ambos servicios deben estar disponibles. Las reservas anteriores
+Las solicitudes nuevas se guardan primero en Room. Si el servicio está caído quedan pendientes de envío; el servidor valida los cruces cuando vuelven a enviarse. Aprobar o rechazar reservas compartidas requiere conexión. Las reservas anteriores
 de Room se conservan y siguen siendo locales. Las cuentas solo locales mantienen su
 flujo anterior.
 
@@ -107,3 +107,14 @@ bash ./gradlew :app:assembleDebug :app:lintDebug :app:assembleDebugAndroidTest
 ```
 
 Con un emulador conectado, `bash ./gradlew :app:connectedDebugAndroidTest` ejecuta las pruebas de Room y catálogo. La prueba remota de reportes se omite por defecto; solo se activa al pasar el argumento `neonPrueba` explícitamente y necesita ambos servicios de prueba en los puertos 18081 y 18080.
+
+## Respaldo y envío offline
+
+- **Consulta:** se guarda en Room la última respuesta válida de reservas y reportes de cada cuenta. Al fallar el backend, se conserva esa copia y se muestra el aviso de conexión. Las copias de solicitante y administrador se guardan por separado.
+- **Creación:** las solicitudes y los reportes nuevos de cuentas vinculadas se guardan primero en una cola persistente. Las fotos del reporte también quedan incluidas en la cola.
+- **Reconexión:** con una pantalla de la cuenta abierta, se intenta enviar la cola cada cinco segundos. Si se cierra la app, los pendientes permanecen en Room y se reanudan al abrirla. No se ejecuta un servicio permanente en segundo plano.
+- **Horarios:** una solicitud pendiente de envío todavía no ocupa el espacio en el servidor. Si al sincronizar el horario está ocupado o la fecha ya pasó, aparece el error y se puede descartar la solicitud para crear otra.
+- **Decisiones:** la aprobación, el rechazo y la respuesta del administrador se confirman en el backend; no se encolan offline.
+- **Reintentos:** cada envío conserva un identificador UUID. El backend devuelve el registro ya creado si perdió la respuesta anterior, evitando duplicados. Es necesario ejecutar también la versión actualizada del backend.
+
+La versión 7 de Room agrega la copia y la cola sin borrar los datos anteriores. En el backend, `V4__identificar_envios_offline.sql` identifica los reintentos en reservas y reportes; no cambia usuarios ni contraseñas.

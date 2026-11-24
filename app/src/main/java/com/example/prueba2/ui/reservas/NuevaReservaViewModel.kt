@@ -121,7 +121,7 @@ class NuevaReservaViewModel(
         (scopeGuardado ?: viewModelScope).launch {
             try {
                 val id = enviarSolicitud(reserva)
-                estado = estado.copy(mostrarResumen = false, reservaGuardadaId = id)
+                estado = estado.copy(mostrarResumen = false, reservaGuardadaId = id, pendienteEnvio = id > Long.MAX_VALUE / 2)
             } catch (cancelacion: CancellationException) {
                 throw cancelacion
             } catch (_: ReservaNoDisponibleException) {

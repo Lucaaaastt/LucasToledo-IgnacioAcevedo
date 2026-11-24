@@ -1,5 +1,6 @@
 package com.example.prueba2.ui.menu
 
+import com.example.prueba2.data.repository.sincronizarPendientes
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -62,6 +63,7 @@ class Menu : ComponentActivity() {
         )
 
         val usuarioId = intent.getIntExtra("USER_ID", -1)
+        sincronizarPendientes(usuarioId)
 
         val nombreUsuario = intent.getStringExtra("USER_NOMBRE")
             ?.trim()

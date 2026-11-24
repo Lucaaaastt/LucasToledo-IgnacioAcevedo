@@ -32,7 +32,11 @@ data class Reserva(
     val horaTermino: LocalTime,
     val motivo: String,
     @ColumnInfo(defaultValue = "'PENDIENTE'")
-    val estado: EstadoReserva = EstadoReserva.PENDIENTE
+    val estado: EstadoReserva = EstadoReserva.PENDIENTE,
+    @ColumnInfo(defaultValue = "0")
+    val pendienteEnvio: Boolean = false,
+    @ColumnInfo(defaultValue = "NULL")
+    val errorEnvio: String? = null
 )
 
 enum class EstadoReserva {
