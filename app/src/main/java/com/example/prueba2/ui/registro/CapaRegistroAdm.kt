@@ -34,16 +34,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.prueba2.data.local.AppDatabase
-import com.example.prueba2.data.local.Usuario
+import com.example.prueba2.data.remote.ErrorUsuarios
+import com.example.prueba2.data.remote.UsuariosApi
 import com.example.prueba2.ui.login.MainActivity
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class CapaRegistroAdm: ComponentActivity() {
-
-    private val codigo_adm = "Admin2026" // codigo de seguridad
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,7 +48,7 @@ class CapaRegistroAdm: ComponentActivity() {
         setContent {
             val context = LocalContext.current
             val scope = rememberCoroutineScope()
-            val db = remember { AppDatabase.getDatabase(context) }
+            val api = remember { UsuariosApi() }
             var isPasswordVisible by remember { mutableStateOf(false) }
 
             var nombre by remember { mutableStateOf("") }
@@ -63,14 +59,16 @@ class CapaRegistroAdm: ComponentActivity() {
             val nombreEsValido = nombre.trim().isNotEmpty()
             val correoEsValido = correoValido(correo)
             val passwordEsValida = passwordValida(password)
-            val codigoEsValido = codigoSeguridad.trim() == codigo_adm
+            val codigoEsValido = codigoSeguridad.isNotBlank()
+            var codigoRechazado by remember { mutableStateOf(false) }
 
+            var guardando by remember { mutableStateOf(false) }
             var intentoGuardar by remember { mutableStateOf(false) }
 
             val errorNombre = intentoGuardar && !nombreEsValido
             val errorCorreo = intentoGuardar && !correoEsValido
             val errorPassword = intentoGuardar && !passwordEsValida
-            val errorCodigo = intentoGuardar && !codigoEsValido
+            val errorCodigo = (intentoGuardar && !codigoEsValido) || codigoRechazado
 
             Scaffold(
                 topBar = {
@@ -163,7 +161,10 @@ class CapaRegistroAdm: ComponentActivity() {
 
                     TextField(
                         value = codigoSeguridad,
-                        onValueChange = { codigoSeguridad = it },
+                        onValueChange = {
+                            codigoSeguridad = it
+                            codigoRechazado = false
+                        },
                         label = { Text("Codigo Seguridad") },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
@@ -182,46 +183,33 @@ class CapaRegistroAdm: ComponentActivity() {
                         Button(onClick = {
                             intentoGuardar = true
                             if (nombreEsValido && correoEsValido && passwordEsValida && codigoEsValido) {
-                                scope.launch(Dispatchers.IO) {
-                                    val dao = db.usuarioDao()
-                                    val existente = dao.obtenerPorCorreo(correo.trim())
-
-                                    if (existente != null) {
-                                        withContext(Dispatchers.Main) {
-                                            Toast.makeText(
-                                                context,
-                                                "CORREO YA REGISTRADO!",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
+                                guardando = true
+                                val nombreIngresado = nombre
+                                val correoIngresado = correo
+                                val passwordIngresada = password
+                                val codigoIngresado = codigoSeguridad
+                                codigoRechazado = false
+                                scope.launch {
+                                    try {
+                                        api.registrar(nombreIngresado, correoIngresado, passwordIngresada, codigoIngresado)
+                                        Toast.makeText(context, "REGISTRO EXITOSO!", Toast.LENGTH_SHORT).show()
+                                        startActivity(Intent(this@CapaRegistroAdm, MainActivity::class.java))
+                                        finish()
+                                    } catch (error: ErrorUsuarios) {
+                                        if (error.estadoHttp == 403 && codigoSeguridad == codigoIngresado) {
+                                            codigoRechazado = true
                                         }
-                                    } else {
-                                        dao.registrarUsuario(
-                                            Usuario(
-                                                nombre = nombre.trim(),
-                                                correo = correo.trim(),
-                                                password = password,
-                                                rol = "ADMIN"
-                                            )
-                                        )
-                                        withContext(Dispatchers.Main) {
-                                            Toast.makeText(
-                                                context,
-                                                "REGISTRO EXITOSO!",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            val intent =
-                                                Intent(this@CapaRegistroAdm, MainActivity::class.java)
-                                            startActivity(intent)
-                                            finish() // Cierra la pantalla de registro tras navegar
-                                        }
+                                        Toast.makeText(context, error.message, Toast.LENGTH_LONG).show()
+                                    } finally {
+                                        guardando = false
                                     }
                                 }
                             } else {
                                 Toast.makeText(context, "COMPLETE LOS CAMPOS", Toast.LENGTH_SHORT)
                                     .show()
                             }
-                        }) {
-                            Text("Ingresar")
+                        }, enabled = !guardando) {
+                            Text(if (guardando) "Guardando…" else "Ingresar")
                         }
                     }
                 }

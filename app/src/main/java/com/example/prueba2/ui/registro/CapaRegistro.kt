@@ -32,12 +32,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.prueba2.data.local.AppDatabase
-import com.example.prueba2.data.local.Usuario
+import com.example.prueba2.data.remote.ErrorUsuarios
+import com.example.prueba2.data.remote.UsuariosApi
 import com.example.prueba2.ui.login.MainActivity
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class CapaRegistro: ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -48,7 +46,7 @@ class CapaRegistro: ComponentActivity() {
 
             val context = LocalContext.current
             val scope = rememberCoroutineScope()
-            val db = remember { AppDatabase.getDatabase(context) }
+            val api = remember { UsuariosApi() }
             var isPasswordVisible by remember { mutableStateOf(false) }
 
             var nombre by remember { mutableStateOf("") }
@@ -59,6 +57,7 @@ class CapaRegistro: ComponentActivity() {
             val correoEsValido = correoValido(correo)
             val passwordEsValida = passwordValida(password)
 
+            var guardando by remember { mutableStateOf(false) }
             var intentoGuardar by remember { mutableStateOf(false) }
 
             val errorNombre = intentoGuardar && !nombreEsValido
@@ -157,46 +156,28 @@ class CapaRegistro: ComponentActivity() {
                         Button(onClick = {
                             intentoGuardar = true
                             if (nombreEsValido && correoEsValido && passwordEsValida) {
-                                scope.launch(Dispatchers.IO) {
-                                    val dao = db.usuarioDao()
-                                    val existente = dao.obtenerPorCorreo(correo.trim())
-
-                                    if (existente != null) {
-                                        withContext(Dispatchers.Main) {
-                                            Toast.makeText(
-                                                context,
-                                                "CORREO YA REGISTRADO!",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    } else {
-                                        dao.registrarUsuario(
-                                            Usuario(
-                                                nombre = nombre.trim(),
-                                                correo = correo.trim(),
-                                                password = password,
-                                                rol = "SOLICITANTE"
-                                            )
-                                        )
-                                        withContext(Dispatchers.Main) {
-                                            Toast.makeText(
-                                                context,
-                                                "REGISTRO EXITOSO!",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            val intent =
-                                                Intent(this@CapaRegistro, MainActivity::class.java)
-                                            startActivity(intent)
-                                            finish() // Cierra la pantalla de registro tras navegar
-                                        }
+                                guardando = true
+                                val nombreIngresado = nombre
+                                val correoIngresado = correo
+                                val passwordIngresada = password
+                                scope.launch {
+                                    try {
+                                        api.registrar(nombreIngresado, correoIngresado, passwordIngresada)
+                                        Toast.makeText(context, "REGISTRO EXITOSO!", Toast.LENGTH_SHORT).show()
+                                        startActivity(Intent(this@CapaRegistro, MainActivity::class.java))
+                                        finish()
+                                    } catch (error: ErrorUsuarios) {
+                                        Toast.makeText(context, error.message, Toast.LENGTH_LONG).show()
+                                    } finally {
+                                        guardando = false
                                     }
                                 }
                             } else {
                                 Toast.makeText(context, "COMPLETE LOS CAMPOS", Toast.LENGTH_SHORT)
                                     .show()
                             }
-                        }) {
-                            Text("Ingresar")
+                        }, enabled = !guardando) {
+                            Text(if (guardando) "Guardando…" else "Ingresar")
                         }
                     }
                 }
