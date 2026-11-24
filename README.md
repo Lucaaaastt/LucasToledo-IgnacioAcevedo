@@ -71,3 +71,14 @@ Los usuarios y las reservas se almacenan en el dispositivo. No existe sincroniza
 Para usar otro destino, configura `usuariosApiUrl` como propiedad de Gradle. En un teléfono conectado por USB puedes usar `adb reverse tcp:8081 tcp:8081` y compilar con `-PusuariosApiUrl=http://127.0.0.1:8081`. Para release, configura una URL HTTPS.
 
 El registro requiere conexión. Si el servicio no está disponible, el login puede usar una cuenta ya guardada en ese dispositivo. Cuando el servidor rechaza las credenciales, Android muestra el error. Las reservas permanecen en Room/SQLite. Si una cuenta de Room anterior a la integración todavía no existe en el servidor, registra el mismo correo y contraseña e inicia sesión para vincularla sin perder sus reservas locales.
+
+## Catálogo de espacios
+
+Ejecuta `ms-espacios-reservas` en el puerto 8080. Al abrir **Nueva reserva**, Android
+consulta `GET /api/espacios` y guarda el catálogo en Room. Si falla la consulta,
+usa la última copia guardada. Una instalación sin copia usa el catálogo incluido.
+
+En debug, el emulador usa `http://10.0.2.2:8080`. Puedes cambiar el destino con
+`-PespaciosApiUrl=URL`; para release usa HTTPS. En un teléfono por USB,
+usa `adb reverse tcp:8080 tcp:8080` y `-PespaciosApiUrl=http://127.0.0.1:8080`.
+El envío y la aprobación de reservas todavía se guardan en el dispositivo.

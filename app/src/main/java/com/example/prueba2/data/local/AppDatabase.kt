@@ -9,14 +9,15 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Usuario::class, Reserva::class],
-    version = 4,
+    entities = [Usuario::class, Reserva::class, EspacioCatalogoLocal::class],
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(ReservaConverters::class)
 abstract class AppDatabase : RoomDatabase (){
     abstract fun usuarioDao(): UsuarioDao
     abstract fun reservaDao(): ReservaDao
+    internal abstract fun catalogoEspaciosDao(): CatalogoEspaciosDao
 
     companion object {
         @Volatile
@@ -57,13 +58,28 @@ abstract class AppDatabase : RoomDatabase (){
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE catalogo_espacios (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        nombre TEXT NOT NULL,
+                        tipo TEXT NOT NULL,
+                        orden INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "colegioMP_db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
                 INSTANCE = instance
                 instance
             }

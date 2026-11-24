@@ -8,12 +8,13 @@ plugins {
 }
 
 val urlUsuarios = providers.gradleProperty("usuariosApiUrl")
+val urlEspacios = providers.gradleProperty("espaciosApiUrl")
 
 fun urlComoLiteral(url: String): String {
     val uri = if (url.isEmpty()) null else URI(url)
     require(uri == null || (uri.host != null && uri.userInfo == null &&
         uri.query == null && uri.fragment == null && uri.scheme in listOf("http", "https"))) {
-        "usuariosApiUrl debe ser una URL HTTP o HTTPS sin credenciales, query ni fragmento."
+        "La URL del servicio debe ser HTTP o HTTPS sin credenciales, query ni fragmento."
     }
     return "\"${url.trimEnd('/')}\""
 }
@@ -36,11 +37,16 @@ android {
         debug {
             buildConfigField("String", "USUARIOS_API_URL",
                 urlComoLiteral(urlUsuarios.orElse("http://10.0.2.2:8081").get()))
+            buildConfigField("String", "ESPACIOS_API_URL",
+                urlComoLiteral(urlEspacios.orElse("http://10.0.2.2:8080").get()))
         }
         release {
             val url = urlUsuarios.orElse("").get()
             buildConfigField("String", "USUARIOS_API_URL",
                 urlComoLiteral(if (url.startsWith("https://")) url else ""))
+            val espacios = urlEspacios.orElse("").get()
+            buildConfigField("String", "ESPACIOS_API_URL",
+                urlComoLiteral(if (espacios.startsWith("https://")) espacios else ""))
             optimization {
                 enable = false
             }

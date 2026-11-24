@@ -50,7 +50,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.prueba2.data.catalogo.TipoEspacio
-import com.example.prueba2.data.catalogo.espaciosDelTipo
 import com.example.prueba2.ui.theme.Prueba2Theme
 import java.time.LocalDate
 import java.time.ZoneId
@@ -77,7 +76,7 @@ fun NuevaReservaPantalla(
 ) {
     val context = LocalContext.current
     val errores = if (estado.intentoRevisar) validarNuevaReserva(estado) else ErroresNuevaReserva()
-    val espacios = espaciosDelTipo(estado.tipo)
+    val espacios = estado.espaciosDisponibles
 
     Scaffold(
         topBar = {
@@ -109,7 +108,7 @@ fun NuevaReservaPantalla(
             SelectorReserva(
                 etiqueta = "Tipo de espacio *",
                 valor = estado.tipo?.etiqueta.orEmpty(),
-                opciones = TipoEspacio.entries.map { it.name to it.etiqueta },
+                opciones = TipoEspacio.entries.filter { it in estado.catalogo }.map { it.name to it.etiqueta },
                 error = errores.tipo,
                 onSeleccionar = { onTipo(TipoEspacio.valueOf(it)) }
             )

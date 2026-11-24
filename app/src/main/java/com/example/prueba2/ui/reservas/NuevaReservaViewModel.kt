@@ -6,18 +6,21 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.prueba2.data.catalogo.TipoEspacio
-import com.example.prueba2.data.catalogo.espaciosDelTipo
+import com.example.prueba2.data.catalogo.EspacioReserva
 import com.example.prueba2.data.local.Reserva
 import com.example.prueba2.data.repository.ReservaNoDisponibleException
 import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 
 class NuevaReservaViewModel(
     private val usuarioId: Int = 0,
     private val enviarSolicitud: suspend (Reserva) -> Long = { error("Guardado no configurado") },
-    private val scopeGuardado: CoroutineScope? = null
+    private val scopeGuardado: CoroutineScope? = null,
+    catalogo: Flow<Map<TipoEspacio, List<EspacioReserva>>> = emptyFlow()
 ) : ViewModel() {
     var estado by mutableStateOf(EstadoNuevaReserva())
         private set
@@ -25,11 +28,30 @@ class NuevaReservaViewModel(
     private val edicionBloqueada: Boolean
         get() = estado.guardando || estado.reservaGuardadaId != null
 
+    init {
+        viewModelScope.launch {
+            catalogo.collect(::actualizarCatalogo)
+        }
+    }
+
+    internal fun actualizarCatalogo(catalogo: Map<TipoEspacio, List<EspacioReserva>>) {
+        val tipo = estado.tipo?.takeIf { it in catalogo }
+        val disponibles = catalogo[tipo].orEmpty()
+        val espacioId = estado.espacioId?.takeIf { id -> disponibles.any { it.id == id } }
+            ?: disponibles.singleOrNull()?.id
+        estado = estado.copy(
+            catalogo = catalogo,
+            tipo = tipo,
+            espacioId = espacioId,
+            mostrarResumen = estado.mostrarResumen && espacioId == estado.espacioId
+        )
+    }
+
     fun seleccionarTipo(tipo: TipoEspacio) {
-        if (edicionBloqueada) return
+        if (edicionBloqueada || tipo !in estado.catalogo) return
         estado = estado.copy(
             tipo = tipo,
-            espacioId = espaciosDelTipo(tipo).singleOrNull()?.id,
+            espacioId = estado.catalogo[tipo].orEmpty().singleOrNull()?.id,
             mostrarResumen = false,
             errorGuardado = null
         )
@@ -37,7 +59,7 @@ class NuevaReservaViewModel(
 
     fun seleccionarEspacio(id: String) {
         if (edicionBloqueada) return
-        if (espaciosDelTipo(estado.tipo).any { it.id == id }) {
+        if (estado.espaciosDisponibles.any { it.id == id }) {
             estado = estado.copy(espacioId = id, mostrarResumen = false, errorGuardado = null)
         }
     }
