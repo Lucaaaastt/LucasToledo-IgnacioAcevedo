@@ -70,6 +70,20 @@ kotlin {
     jvmToolchain(11)
 }
 
+// Evita entregar un instalador release sin conexión a los servicios.
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    inputs.property("usuariosApiUrl", urlUsuarios.orElse(""))
+    inputs.property("espaciosApiUrl", urlEspacios.orElse(""))
+    doFirst {
+        for (propiedad in listOf("usuariosApiUrl", "espaciosApiUrl")) {
+            val url = inputs.properties[propiedad] as String
+            require(url.startsWith("https://")) {
+                "Falta configurar $propiedad con la URL HTTPS del backend antes de generar release."
+            }
+        }
+    }
+}
+
 // Obliga a Room a generar código en Kotlin nativo
 ksp {
     arg("room.generateKotlin", "true")
