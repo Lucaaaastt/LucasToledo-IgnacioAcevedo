@@ -36,6 +36,7 @@ class NuevaReservaViewModel(
     }
 
     internal fun actualizarCatalogo(catalogo: Map<TipoEspacio, List<EspacioReserva>>) {
+        if (edicionBloqueada) return
         val tipo = estado.tipo?.takeIf { it in catalogo }
         val disponibles = catalogo[tipo].orEmpty()
         val espacioId = estado.espacioId?.takeIf { id -> disponibles.any { it.id == id } }

@@ -30,6 +30,7 @@ internal class ReservasCompartidas(
     private val dao = database.respaldoDao()
     private val respaldo = RespaldoRemoto(database, TIPO_RESERVAS)
     val avisoConexion = MutableStateFlow<String?>(null)
+    val actualizando = MutableStateFlow(false)
 
     fun obtenerPorUsuario(usuarioId: Int): Flow<List<Reserva>> = flow {
         val usuario = obtenerUsuario(usuarioId)
@@ -61,6 +62,7 @@ internal class ReservasCompartidas(
     private fun actualizar(usuario: Usuario, administrador: Boolean, alcance: String): Flow<Unit> = flow {
         emit(Unit)
         while (true) {
+            actualizando.value = true
             try {
                 sincronizar(usuario.id)
                 val datos = api.obtenerListado(usuario, administrador)
@@ -70,9 +72,9 @@ internal class ReservasCompartidas(
             } catch (cancelacion: CancellationException) {
                 throw cancelacion
             } catch (error: Exception) {
-                avisoConexion.value = if (error.esCaidaDeServicio())
-                    "Sin conexión al servidor. Se muestra la última copia guardada; los envíos pendientes esperan conexión."
-                else error.message ?: "No se pudo actualizar la copia guardada."
+                avisoConexion.value = error.avisoDeActualizacion()
+            } finally {
+                actualizando.value = false
             }
             emit(Unit)
             delay(5_000)

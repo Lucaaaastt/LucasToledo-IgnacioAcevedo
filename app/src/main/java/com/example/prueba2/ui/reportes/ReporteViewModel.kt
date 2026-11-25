@@ -19,6 +19,7 @@ class ReporteViewModel(
 ) : ViewModel() {
 
     val avisoConexion = repository.avisoConexion
+    val actualizando = repository.actualizando
 
     private val _reportesUsuario = MutableStateFlow<List<ReporteIncidencia>>(emptyList())
     val reportesUsuario: StateFlow<List<ReporteIncidencia>> = _reportesUsuario.asStateFlow()
@@ -67,7 +68,6 @@ class ReporteViewModel(
         if (_cargando.value) return
         _cargando.value = true
         viewModelScope.launch {
-            _cargando.value = true
             _mensajeError.value = null
             _mensajeExito.value = null
             try {
@@ -78,9 +78,11 @@ class ReporteViewModel(
                     fotoUri = fotoUri
                 )
                 val id = repository.enviarReporte(nuevoReporte)
-                _mensajeExito.value = if (id > Long.MAX_VALUE / 2)
-                    "Reporte guardado en el dispositivo. Se enviará al recuperar conexión con la app abierta."
-                else "Reporte de incidencia enviado correctamente."
+                _mensajeExito.value = when {
+                    id > Long.MAX_VALUE / 2 -> "Reporte guardado en el dispositivo. Se enviará al recuperar conexión con la app abierta."
+                    id > 0 -> "Reporte guardado en este dispositivo."
+                    else -> "Reporte de incidencia enviado correctamente."
+                }
                 cargarReportesUsuario(usuarioId)
             } catch (cancelacion: CancellationException) {
                 throw cancelacion
@@ -100,7 +102,6 @@ class ReporteViewModel(
         if (_cargando.value) return
         _cargando.value = true
         viewModelScope.launch {
-            _cargando.value = true
             _mensajeError.value = null
             _mensajeExito.value = null
             try {

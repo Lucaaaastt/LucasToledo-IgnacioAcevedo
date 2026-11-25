@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 
 class MisReservasViewModel private constructor(
@@ -51,6 +53,7 @@ class MisReservasViewModel private constructor(
     }
 
     private val decision = MutableStateFlow(EstadoDecisionReserva())
+    private val reintentos = MutableStateFlow(0)
 
     private val listado: Flow<EstadoMisReservas> = flow {
         var ultimaLista = emptyList<ReservaResumen>()
@@ -63,9 +66,16 @@ class MisReservasViewModel private constructor(
         })
     }.onStart { emit(EstadoMisReservas()) }
 
-    val estado: Flow<EstadoMisReservas> = combine(listado, decision) { lista, accion ->
-        lista.copy(decision = accion)
-    }.combine(avisoConexion) { lista, aviso -> lista.copy(avisoConexion = aviso) }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val estado: Flow<EstadoMisReservas> = reintentos.flatMapLatest {
+        combine(listado, decision) { lista, accion ->
+            lista.copy(decision = accion)
+        }.combine(avisoConexion) { lista, aviso -> lista.copy(avisoConexion = aviso) }
+    }
+
+    fun reintentarCarga() {
+        reintentos.value += 1
+    }
 
     fun descartarError(reserva: ReservaResumen) {
         val borrar = descartar ?: return

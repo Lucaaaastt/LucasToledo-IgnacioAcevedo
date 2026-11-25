@@ -2,12 +2,15 @@ package com.example.prueba2.reportes
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelStore
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.prueba2.data.local.AppDatabase
 import com.example.prueba2.data.local.EstadoReporte
 import com.example.prueba2.data.local.Usuario
 import com.example.prueba2.data.repository.ReporteRepository
+import com.example.prueba2.data.remote.ReportesApi
+import kotlinx.coroutines.runBlocking
 import com.example.prueba2.ui.reportes.ReporteViewModel
 import com.example.prueba2.ui.reportes.ReporteViewModelFactory
 import kotlinx.coroutines.Dispatchers
@@ -90,7 +93,7 @@ class ReporteViewModelTest {
         esperarHasta { !viewModel.cargando.value && viewModel.reportesUsuario.value.isNotEmpty() }
 
         assertFalse(viewModel.cargando.value)
-        assertEquals("Reporte de incidencia enviado correctamente.", viewModel.mensajeExito.value)
+        assertEquals("Reporte guardado en este dispositivo.", viewModel.mensajeExito.value)
         assertNull(viewModel.mensajeError.value)
         assertEquals(1, viewModel.reportesUsuario.value.size)
         assertEquals("SALA-4", viewModel.reportesUsuario.value.first().espacioId)
@@ -159,6 +162,30 @@ class ReporteViewModelTest {
         viewModel.limpiarMensajes()
         assertNull(viewModel.mensajeExito.value)
         assertNull(viewModel.mensajeError.value)
+    }
+
+    @Test
+    fun reporteOfflineInformaPendienteYReintentarNoCreaOtroEnvio() = runBlocking {
+        val usuario = requireNotNull(database.usuarioDao().obtenerPorId(solicitanteId))
+        database.usuarioDao().actualizarUsuario(usuario.copy(remotoId = 501))
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val remoto = ReporteRepository(database, ReportesApi(context, "http://127.0.0.1:9"))
+        val vm = ReporteViewModel(remoto)
+        val store = ViewModelStore().apply { put("reporte", vm) }
+        try {
+            vm.enviarReporte(solicitanteId, "SALA-4", "Ventana rota", null)
+            esperarHasta { !vm.cargando.value && vm.mensajeExito.value != null }
+            assertTrue(vm.mensajeExito.value!!.contains("guardado en el dispositivo"))
+            val primero = database.respaldoDao().porEnviar(solicitanteId, "reportes").single()
+            vm.cargarReportesUsuario(solicitanteId)
+            esperarHasta { vm.avisoConexion.value != null && !vm.actualizando.value }
+            val despues = database.respaldoDao().porEnviar(solicitanteId, "reportes").single()
+            assertEquals(primero.clave, despues.clave)
+            assertEquals(primero.id, despues.id)
+            assertNull(vm.mensajeError.value)
+        } finally {
+            store.clear()
+        }
     }
 
     @Test

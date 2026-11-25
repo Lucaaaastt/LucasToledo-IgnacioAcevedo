@@ -8,6 +8,10 @@ import com.example.prueba2.ui.reservas.MisReservasViewModel
 import java.time.LocalDate
 import java.time.LocalTime
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
+import com.example.prueba2.ui.reservas.EstadoMisReservas
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -39,6 +43,46 @@ class MisReservasViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun reintentarRecuperaElListadoSinSalirDeLaPantalla() = runTest {
+        var intentos = 0
+        val reserva = Reserva(id = 90, usuarioId = 2, espacioId = "SALA-1", fecha = fechaFutura,
+            horaInicio = LocalTime.of(10, 0), horaTermino = LocalTime.of(11, 0), motivo = "Clase")
+        val vm = MisReservasViewModel(flow {
+            if (++intentos == 1) throw IllegalStateException("Sin conexión")
+            emit(listOf(reserva))
+        })
+        var ultimo = EstadoMisReservas()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.estado.collect { ultimo = it } }
+        runCurrent()
+        assertNotNull(ultimo.error)
+        vm.reintentarCarga()
+        runCurrent()
+        assertEquals(2, intentos)
+        assertNull(ultimo.error)
+        assertEquals("90", ultimo.reservas.single().id)
+    }
+
+    @Test
+    fun confirmarDosVecesNoDuplicaLaDecisionAdministrativa() = runTest {
+        val confirmar = CompletableDeferred<Unit>()
+        var llamadas = 0
+        val reserva = Reserva(id = 90, usuarioId = 2, espacioId = "SALA-1", fecha = fechaFutura,
+            horaInicio = LocalTime.of(10, 0), horaTermino = LocalTime.of(11, 0), motivo = "Clase")
+        val vm = MisReservasViewModel.paraAdministrador(flowOf(listOf(ReservaConSolicitante(reserva, "Ana")))) { _, _ ->
+            llamadas++
+            confirmar.await()
+        }
+        val resumen = vm.estado.first { !it.cargando }.reservas.single()
+        vm.solicitarDecision(resumen, EstadoReserva.APROBADA)
+        vm.confirmarDecision()
+        vm.confirmarDecision()
+        assertEquals(1, llamadas)
+        assertTrue(vm.estado.first { !it.cargando }.decision.guardando)
+        confirmar.complete(Unit)
+        assertFalse(vm.estado.first { !it.cargando }.decision.guardando)
     }
 
     @Test

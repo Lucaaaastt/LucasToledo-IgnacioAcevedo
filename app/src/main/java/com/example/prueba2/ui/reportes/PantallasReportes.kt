@@ -91,10 +91,12 @@ fun VistaReportesUsuario(
     val context = LocalContext.current
     val reportes by viewModel.reportesUsuario.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
+    val actualizando by viewModel.actualizando.collectAsState()
     val avisoConexion by viewModel.avisoConexion.collectAsState()
     val mensajeExito by viewModel.mensajeExito.collectAsState()
     val mensajeError by viewModel.mensajeError.collectAsState()
 
+    var ultimoGuardado by remember { mutableStateOf<String?>(null) }
     var tipoSeleccionado by remember { mutableStateOf<TipoEspacio?>(null) }
     var espacioSeleccionado by remember { mutableStateOf<EspacioReserva?>(null) }
     var descripcion by remember { mutableStateOf("") }
@@ -110,6 +112,7 @@ fun VistaReportesUsuario(
     LaunchedEffect(mensajeExito) {
         mensajeExito?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            ultimoGuardado = it
             tipoSeleccionado = null
             espacioSeleccionado = null
             descripcion = ""
@@ -192,8 +195,8 @@ fun VistaReportesUsuario(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            TextButton(onClick = { viewModel.cargarReportesUsuario(usuarioId) }, enabled = !cargando) {
-                Text("Actualizar reportes")
+            TextButton(onClick = { viewModel.cargarReportesUsuario(usuarioId) }, enabled = !cargando && !actualizando) {
+                Text(if (actualizando) "Actualizando…" else if (avisoConexion != null || mensajeError != null) "Reintentar conexión y envíos" else "Actualizar reportes")
             }
         }
 
@@ -209,6 +212,7 @@ fun VistaReportesUsuario(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     SelectorDesplegable(
+                        habilitado = !cargando,
                         etiqueta = "Tipo de espacio",
                         valorActual = tipoSeleccionado?.etiqueta ?: "Seleccionar tipo...",
                         opciones = TipoEspacio.entries,
@@ -222,6 +226,7 @@ fun VistaReportesUsuario(
 
                     if (tipoSeleccionado != null) {
                         SelectorDesplegable(
+                            habilitado = !cargando,
                             etiqueta = "Espacio específico",
                             valorActual = espacioSeleccionado?.nombre ?: "Seleccionar espacio...",
                             opciones = listaEspacios,
@@ -231,6 +236,7 @@ fun VistaReportesUsuario(
                     }
 
                     OutlinedTextField(
+                        enabled = !cargando,
                         value = descripcion,
                         onValueChange = { if (it.length <= 500) descripcion = it },
                         label = { Text("Descripción del problema") },
@@ -250,6 +256,7 @@ fun VistaReportesUsuario(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         OutlinedButton(
+                            enabled = !cargando,
                             onClick = { abrirCamaraConPermiso() },
                             modifier = Modifier.weight(1f)
                         ) {
@@ -259,6 +266,7 @@ fun VistaReportesUsuario(
                         }
 
                         OutlinedButton(
+                            enabled = !cargando,
                             onClick = { galeriaLauncher.launch("image/*") },
                             modifier = Modifier.weight(1f)
                         ) {
@@ -278,6 +286,7 @@ fun VistaReportesUsuario(
                                     .clip(RoundedCornerShape(10.dp))
                             )
                             IconButton(
+                                enabled = !cargando,
                                 onClick = { fotoUri = null },
                                 modifier = Modifier.align(Alignment.TopEnd)
                             ) {
@@ -306,6 +315,7 @@ fun VistaReportesUsuario(
 
                     Button(
                         onClick = {
+                            ultimoGuardado = null
                             viewModel.enviarReporte(
                                 usuarioId = usuarioId,
                                 espacioId = espacioSeleccionado?.id.orEmpty(),
@@ -321,8 +331,10 @@ fun VistaReportesUsuario(
                                 strokeWidth = 2.dp,
                                 modifier = Modifier.height(20.dp).width(20.dp)
                             )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Guardando y enviando…")
                         } else {
-                            Text("Enviar reporte")
+                            Text(if (mensajeError != null) "Reintentar envío" else "Enviar reporte")
                         }
                     }
                 }
@@ -338,11 +350,12 @@ fun VistaReportesUsuario(
             )
         }
 
+        ultimoGuardado?.let { mensaje -> item { Text("Último resultado: $mensaje", color = MaterialTheme.colorScheme.primary) } }
         avisoConexion?.let { aviso -> item { Text(aviso, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
-        if (reportes.isEmpty()) {
+        if (reportes.isEmpty() && !actualizando) {
             item {
                 Text(
-                    text = "Aún no has enviado reportes de incidencia.",
+                    text = if (avisoConexion == null && mensajeError == null) "Aún no has enviado reportes de incidencia." else "No hay una copia guardada disponible. Reintenta la conexión para consultar tus reportes.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -364,6 +377,7 @@ fun VistaReportesAdmin(
     val context = LocalContext.current
     val todosLosReportes by viewModel.todosLosReportes.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
+    val actualizando by viewModel.actualizando.collectAsState()
     val avisoConexion by viewModel.avisoConexion.collectAsState()
     val mensajeExito by viewModel.mensajeExito.collectAsState()
     val mensajeError by viewModel.mensajeError.collectAsState()
@@ -388,7 +402,7 @@ fun VistaReportesAdmin(
 
     if (reporteAResponder != null) {
         AlertDialog(
-            onDismissRequest = { reporteAResponder = null },
+            onDismissRequest = { if (!cargando) reporteAResponder = null },
             title = { Text("Responder incidencia") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -401,6 +415,7 @@ fun VistaReportesAdmin(
                         style = MaterialTheme.typography.bodySmall
                     )
                     OutlinedTextField(
+                        enabled = !cargando,
                         value = textoRespuesta,
                         onValueChange = { if (it.length <= 500) textoRespuesta = it },
                         label = { Text("Comentario / Solución") },
@@ -408,6 +423,7 @@ fun VistaReportesAdmin(
                         minLines = 3,
                         modifier = Modifier.fillMaxWidth()
                     )
+                    mensajeError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 }
             },
             confirmButton = {
@@ -421,11 +437,11 @@ fun VistaReportesAdmin(
                     },
                     enabled = !cargando && textoRespuesta.isNotBlank()
                 ) {
-                    Text("Guardar respuesta")
+                    Text(if (cargando) "Guardando respuesta…" else if (mensajeError != null) "Reintentar respuesta" else "Guardar respuesta")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { reporteAResponder = null }) {
+                TextButton(onClick = { reporteAResponder = null }, enabled = !cargando) {
                     Text("Cancelar")
                 }
             }
@@ -450,8 +466,8 @@ fun VistaReportesAdmin(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            TextButton(onClick = { viewModel.cargarTodosLosReportes(administradorId) }, enabled = !cargando) {
-                Text("Actualizar reportes")
+            TextButton(onClick = { viewModel.cargarTodosLosReportes(administradorId) }, enabled = !cargando && !actualizando) {
+                Text(if (actualizando) "Actualizando…" else if (avisoConexion != null || mensajeError != null) "Reintentar conexión" else "Actualizar reportes")
             }
         }
 
@@ -466,10 +482,10 @@ fun VistaReportesAdmin(
         }
 
         avisoConexion?.let { aviso -> item { Text(aviso, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
-        if (todosLosReportes.isEmpty()) {
+        if (todosLosReportes.isEmpty() && !actualizando) {
             item {
                 Text(
-                    text = "No hay reportes de incidencia registrados.",
+                    text = if (avisoConexion == null && mensajeError == null) "No hay reportes de incidencia registrados." else "No hay una copia guardada disponible. Reintenta la conexión para consultar los reportes.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 16.dp)
@@ -480,6 +496,7 @@ fun VistaReportesAdmin(
                 TarjetaReporteAdmin(
                     item = itemReporte,
                     alResponder = {
+                        viewModel.limpiarMensajes()
                         textoRespuesta = itemReporte.reporte.comentarioAdmin.orEmpty()
                         reporteAResponder = itemReporte
                     }
@@ -668,12 +685,14 @@ private fun <T> SelectorDesplegable(
     valorActual: String,
     opciones: List<T>,
     textoOpcion: (T) -> String,
-    alSeleccionar: (T) -> Unit
+    alSeleccionar: (T) -> Unit,
+    habilitado: Boolean = true
 ) {
     var expandido by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
+            enabled = habilitado,
             value = valorActual,
             onValueChange = {},
             readOnly = true,
@@ -683,10 +702,10 @@ private fun <T> SelectorDesplegable(
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .clickable { expandido = true }
+                .clickable(enabled = habilitado) { expandido = true }
         )
         DropdownMenu(
-            expanded = expandido,
+            expanded = expandido && habilitado,
             onDismissRequest = { expandido = false }
         ) {
             opciones.forEach { opcion ->

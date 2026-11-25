@@ -12,6 +12,7 @@ import com.example.prueba2.data.local.ReporteIncidencia
 import com.example.prueba2.data.local.Usuario
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.net.SocketTimeoutException
 import java.net.HttpURLConnection
 import java.net.URI
 import kotlinx.coroutines.Dispatchers
@@ -114,8 +115,10 @@ internal class ReportesApi(
                     }, servicioInaccesible = estado >= 500)
                     if (esperado == 204) "" else conexion.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
                 } finally { conexion.disconnect() }
+            } catch (_: SocketTimeoutException) {
+                throw ErrorReporteRemoto("El servidor tarda en responder. Espera unos segundos y vuelve a intentarlo.", servicioInaccesible = true)
             } catch (_: IOException) {
-                throw ErrorReporteRemoto("No se pudo conectar al servicio de reportes.", servicioInaccesible = true)
+                throw ErrorReporteRemoto("No se pudo conectar al servicio de reportes. Revisa tu conexión a internet y vuelve a intentarlo.", servicioInaccesible = true)
             }
         }
 }

@@ -84,6 +84,8 @@ fun MisReservasPantalla(
     cargando: Boolean = false,
     errorCarga: String? = null,
     avisoConexion: String? = null,
+    actualizando: Boolean = false,
+    onReintentar: () -> Unit = {},
     onDescartarError: (ReservaResumen) -> Unit = {},
     titulo: String = "Mis reservas",
     descripcion: String = "Consulta los datos de tus reservas.",
@@ -152,14 +154,19 @@ fun MisReservasPantalla(
                     }
                 }
             }
+            item {
+                TextButton(onClick = onReintentar, enabled = !actualizando && !decision.guardando) {
+                    Text(if (actualizando) "Actualizando…" else if (avisoConexion != null || errorCarga != null) "Reintentar conexión y envíos" else "Actualizar reservas")
+                }
+            }
             avisoConexion?.let { aviso -> item { Text(aviso, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
             errorCarga?.let { mensaje ->
                 item { Text(mensaje, color = MaterialTheme.colorScheme.error) }
             }
-            if (!cargando && errorCarga == null && reservas.isEmpty()) {
+            if (!cargando && !actualizando && errorCarga == null && reservas.isEmpty()) {
                 item {
                     Text(
-                        text = mensajeVacio,
+                        text = if (avisoConexion == null) mensajeVacio else "No hay una copia guardada disponible. Reintenta la conexión para consultar las reservas.",
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(vertical = 24.dp)
                     )
