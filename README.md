@@ -102,6 +102,14 @@ La integración conserva ambas variantes de Room versión 5 (catálogo o reporte
 
 ## Verificación
 
+Las pruebas locales en `app/src/test` cubren formularios, navegación, DAO, repositorios y ViewModels con JUnit, coroutines-test y Robolectric. Se ejecutan en la JVM sin iniciar el backend ni usar credenciales de Neon:
+
+```bash
+bash ./gradlew :app:testDebugUnitTest
+```
+
+El informe se genera en `app/build/reports/tests/testDebugUnitTest/index.html`. Las pruebas instrumentadas de Room, catálogo y respaldo offline se conservan en `app/src/androidTest` y requieren un emulador o dispositivo.
+
 ```bash
 bash ./gradlew :app:assembleDebug :app:lintDebug :app:assembleDebugAndroidTest
 ```
