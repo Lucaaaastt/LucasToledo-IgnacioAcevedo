@@ -24,6 +24,7 @@ class ReporteRepository internal constructor(private val database: AppDatabase, 
     constructor(database: AppDatabase, context: Context) : this(database, ReportesApi(context.applicationContext))
 
     val avisoConexion = MutableStateFlow<String?>(null)
+    val actualizando = MutableStateFlow(false)
     private val respaldo = RespaldoRemoto(database, TIPO_REPORTES)
     private val daoRespaldo = database.respaldoDao()
 
@@ -55,8 +56,9 @@ class ReporteRepository internal constructor(private val database: AppDatabase, 
     }
 
     private fun actualizar(usuario: Usuario, administrador: Boolean, alcance: String): Flow<Unit> = flow {
-        emit(Unit)
+        actualizando.value = true
         try {
+            emit(Unit)
             sincronizar(usuario.id)
             val datos = api.obtenerListado(usuario, administrador)
             api.leerListado(usuario, datos)
@@ -65,9 +67,9 @@ class ReporteRepository internal constructor(private val database: AppDatabase, 
         } catch (cancelacion: CancellationException) {
             throw cancelacion
         } catch (error: Exception) {
-            avisoConexion.value = if (error.esCaidaDeServicio())
-                "Sin conexión al servidor. Se muestra la última copia guardada; los envíos pendientes esperan conexión."
-            else error.message ?: "No se pudo actualizar la copia guardada."
+            avisoConexion.value = error.avisoDeActualizacion()
+        } finally {
+            actualizando.value = false
         }
         emit(Unit)
         awaitCancellation()

@@ -161,3 +161,12 @@ bash ./gradlew :app:assembleRelease
 ```
 
 El resultado sin firma no es el instalador final de entrega. Conservar el keystore original permite actualizar el instalador firmado por el compañero; las claves y sus contraseñas no se versionan. Las credenciales de Neon se configuran únicamente en el backend y no se incluyen en el APK.
+
+
+## Estados de guardado y reintentos
+
+Los formularios bloquean el envío repetido mientras guardan. Reportes conserva un mensaje visible del último resultado y distingue registros locales, pendientes de envío y confirmados por el servidor. Los errores de la respuesta administrativa aparecen dentro del diálogo; el comentario se conserva para corregirlo o reintentarlo.
+
+Las listas de reservas y reportes muestran `Actualizando…` durante la consulta y permiten reintentar la conexión y los envíos guardados. Si no se pudo consultar el servidor y no hay copia disponible, no se presenta la lista como si estuviera confirmada vacía. El reintento utiliza la misma cola y sus identificadores existentes.
+
+Login y registro mantienen visibles los errores, y los tiempos de espera indican que el servidor tarda en responder. Los conflictos de horario requieren cambiar los datos; un error al decidir una solicitud ya resuelta indica actualizar la lista.

@@ -81,6 +81,7 @@ fun LoginPantalla() {
     var intentoGuardar by remember { mutableStateOf(false) }
     var ingresando by remember { mutableStateOf(false) }
     var errorLoginVisible by remember { mutableStateOf(false) }
+    var errorConexion by remember { mutableStateOf<String?>(null) }
 
     val errorCorreo = intentoGuardar && correo.isBlank()
     val errorPassword = intentoGuardar && password.isBlank()
@@ -112,7 +113,7 @@ fun LoginPantalla() {
             )
 
             AnimatedVisibility(
-                visible = errorLoginVisible,
+                visible = errorLoginVisible || errorConexion != null,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
@@ -125,7 +126,7 @@ fun LoginPantalla() {
                         .padding(bottom = 16.dp)
                 ) {
                     Text(
-                        text = "Correo o contraseña erróneos!",
+                        text = errorConexion ?: "Correo o contraseña erróneos!",
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         modifier = Modifier.padding(12.dp),
                         style = MaterialTheme.typography.bodyMedium
@@ -134,10 +135,12 @@ fun LoginPantalla() {
             }
 
             OutlinedTextField(
+                enabled = !ingresando,
                 value = correo,
                 onValueChange = {
                     correo = it
                     errorLoginVisible = false
+                    errorConexion = null
                 },
                 label = { Text("Correo") },
                 singleLine = true,
@@ -153,10 +156,12 @@ fun LoginPantalla() {
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
+                enabled = !ingresando,
                 value = password,
                 onValueChange = {
                     password = it
                     errorLoginVisible = false
+                    errorConexion = null
                 },
                 label = { Text("Contraseña") },
                 singleLine = true,
@@ -192,7 +197,8 @@ fun LoginPantalla() {
                 onClick = {
                     intentoGuardar = true
                     errorLoginVisible = false
-                    if (correo.isNotBlank() && password.isNotBlank()) {
+                    errorConexion = null
+                    if (!ingresando && correo.isNotBlank() && password.isNotBlank()) {
                         ingresando = true
                         val correoIngresado = correo
                         val passwordIngresada = password
@@ -210,7 +216,7 @@ fun LoginPantalla() {
                                 if (error.estadoHttp == 401) {
                                     errorLoginVisible = true
                                 } else {
-                                    Toast.makeText(context, error.message, Toast.LENGTH_LONG).show()
+                                    errorConexion = error.message ?: "No se pudo iniciar sesión. Inténtalo nuevamente."
                                 }
                             } finally {
                                 ingresando = false
@@ -224,7 +230,7 @@ fun LoginPantalla() {
                     .height(50.dp)
             ) {
                 Text(
-                    text = if (ingresando) "Ingresando…" else "Ingresar",
+                    text = if (ingresando) "Ingresando…" else if (errorConexion != null) "Reintentar ingreso" else "Ingresar",
                     style = MaterialTheme.typography.titleMedium
                 )
             }

@@ -7,6 +7,8 @@ import com.example.prueba2.ui.reservas.NuevaReservaViewModel
 import java.time.LocalDate
 import java.time.LocalTime
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CompletableDeferred
+import com.example.prueba2.data.remote.ErrorReservaRemota
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -125,6 +127,57 @@ class NuevaReservaViewModelTest {
         assertTrue(vmCruce.estado.errorGuardado!!.contains("ya está ocupado"))
         assertNull(vmCruce.estado.reservaGuardadaId)
         assertFalse(vmCruce.estado.guardando)
+    }
+
+    @Test
+    fun doblePulsacionDuranteEnvioSoloGuardaUnaVez() = runTest {
+        val confirmar = CompletableDeferred<Long>()
+        var llamadas = 0
+        val vm = NuevaReservaViewModel(usuarioId = 4, enviarSolicitud = {
+            llamadas++
+            confirmar.await()
+        })
+        completarFormularioValido(vm)
+        vm.revisar()
+        vm.enviar()
+        vm.enviar()
+        assertEquals(1, llamadas)
+        assertTrue(vm.estado.guardando)
+        vm.cambiarMotivo("No debe reemplazar lo que se está enviando")
+        assertEquals("Entrenamiento deportivo", vm.estado.motivo)
+        confirmar.complete(-19L)
+        assertFalse(vm.estado.guardando)
+        assertEquals(-19L, vm.estado.reservaGuardadaId)
+    }
+
+    @Test
+    fun falloDeConexionConservaFormularioYPermiteReintentar() = runTest {
+        var llamadas = 0
+        val vm = NuevaReservaViewModel(usuarioId = 4, enviarSolicitud = {
+            if (++llamadas == 1) throw ErrorReservaRemota(mensaje = "Servidor temporalmente inaccesible", servicioInaccesible = true)
+            -20L
+        })
+        completarFormularioValido(vm)
+        vm.revisar()
+        vm.enviar()
+        assertFalse(vm.estado.guardando)
+        assertTrue(vm.estado.mostrarResumen)
+        assertEquals("Entrenamiento deportivo", vm.estado.motivo)
+        assertEquals("Servidor temporalmente inaccesible", vm.estado.errorGuardado)
+        vm.enviar()
+        assertEquals(2, llamadas)
+        assertEquals(-20L, vm.estado.reservaGuardadaId)
+        assertNull(vm.estado.errorGuardado)
+    }
+
+    @Test
+    fun envioOfflineSeDistingueDeUnaSolicitudConfirmada() = runTest {
+        val vm = NuevaReservaViewModel(usuarioId = 4, enviarSolicitud = { Long.MAX_VALUE - 1 })
+        completarFormularioValido(vm)
+        vm.revisar()
+        vm.enviar()
+        assertTrue(vm.estado.pendienteEnvio)
+        assertFalse(vm.estado.guardando)
     }
 
     private fun completarFormularioValido(viewModel: NuevaReservaViewModel) {

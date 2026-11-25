@@ -7,6 +7,7 @@ import com.example.prueba2.data.local.Reserva
 import com.example.prueba2.data.local.ReservaConSolicitante
 import com.example.prueba2.data.local.Usuario
 import java.io.IOException
+import java.net.SocketTimeoutException
 import java.net.HttpURLConnection
 import java.net.URI
 import java.time.LocalDate
@@ -95,7 +96,8 @@ internal class ReservasApi(private val baseUrl: String = BuildConfig.ESPACIOS_AP
                         400 -> "Revisa la fecha, el horario y el motivo."
                         401, 403 -> "La cuenta no tiene acceso. Vuelve a iniciar sesión."
                         404 -> "El espacio no está disponible en el catálogo del servidor."
-                        409 -> "El horario está ocupado. La solicitud no se envió; crea otra con un horario diferente."
+                        409 -> if (metodo == "PUT") "La solicitud ya cambió de estado. Actualiza las reservas antes de decidir."
+                            else "El horario está ocupado. Elige otro horario o espacio antes de enviar."
                         else -> "No se pudo acceder al servicio de reservas. Intenta nuevamente."
                     }
                     throw ErrorReservaRemota(status, mensaje, servicioInaccesible = status >= 500)
@@ -104,8 +106,10 @@ internal class ReservasApi(private val baseUrl: String = BuildConfig.ESPACIOS_AP
             } finally {
                 conexion.disconnect()
             }
+        } catch (_: SocketTimeoutException) {
+            throw ErrorReservaRemota(mensaje = "El servidor tarda en responder. Espera unos segundos y vuelve a intentarlo.", servicioInaccesible = true)
         } catch (_: IOException) {
-            throw ErrorReservaRemota(mensaje = "No se pudo conectar al servicio de reservas.", servicioInaccesible = true)
+            throw ErrorReservaRemota(mensaje = "No se pudo conectar al servicio de reservas. Revisa tu conexión a internet y vuelve a intentarlo.", servicioInaccesible = true)
         }
     }
 }

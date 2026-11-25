@@ -63,6 +63,7 @@ class CapaRegistroAdm: ComponentActivity() {
             var codigoRechazado by remember { mutableStateOf(false) }
 
             var guardando by remember { mutableStateOf(false) }
+            var errorRegistro by remember { mutableStateOf<String?>(null) }
             var intentoGuardar by remember { mutableStateOf(false) }
 
             val errorNombre = intentoGuardar && !nombreEsValido
@@ -92,6 +93,7 @@ class CapaRegistroAdm: ComponentActivity() {
                         .verticalScroll(rememberScrollState())
                 ) {
                     TextField(
+                        enabled = !guardando,
                         value = nombre,
                         onValueChange = { nombre = it },
                         label = { Text("Ingrese Nombre") },
@@ -108,6 +110,7 @@ class CapaRegistroAdm: ComponentActivity() {
                     )
 
                     TextField(
+                        enabled = !guardando,
                         value = correo,
                         onValueChange = { correo = it },
                         label = { Text("Ingrese Correo") },
@@ -126,6 +129,7 @@ class CapaRegistroAdm: ComponentActivity() {
                     )
 
                     TextField(
+                        enabled = !guardando,
                         value = password,
                         onValueChange = { password = it },
                         label = { Text("Contraseña") },
@@ -160,6 +164,7 @@ class CapaRegistroAdm: ComponentActivity() {
                     }
 
                     TextField(
+                        enabled = !guardando,
                         value = codigoSeguridad,
                         onValueChange = {
                             codigoSeguridad = it
@@ -179,8 +184,11 @@ class CapaRegistroAdm: ComponentActivity() {
                         }
                     )
 
+                    errorRegistro?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     Column(Modifier.padding(horizontal = 90.dp)) {
                         Button(onClick = {
+                            if (guardando) return@Button
+                            errorRegistro = null
                             intentoGuardar = true
                             if (nombreEsValido && correoEsValido && passwordEsValida && codigoEsValido) {
                                 guardando = true
@@ -199,7 +207,7 @@ class CapaRegistroAdm: ComponentActivity() {
                                         if (error.estadoHttp == 403 && codigoSeguridad == codigoIngresado) {
                                             codigoRechazado = true
                                         }
-                                        Toast.makeText(context, error.message, Toast.LENGTH_LONG).show()
+                                        errorRegistro = error.message ?: "No se pudo registrar la cuenta. Inténtalo nuevamente."
                                     } finally {
                                         guardando = false
                                     }
@@ -209,7 +217,7 @@ class CapaRegistroAdm: ComponentActivity() {
                                     .show()
                             }
                         }, enabled = !guardando) {
-                            Text(if (guardando) "Guardando…" else "Ingresar")
+                            Text(if (guardando) "Guardando…" else if (errorRegistro != null) "Reintentar" else "Ingresar")
                         }
                     }
                 }

@@ -24,6 +24,10 @@ internal fun Throwable.esCaidaDeServicio(): Boolean =
     (this as? ErrorReservaRemota)?.servicioInaccesible == true ||
     (this as? ErrorReporteRemoto)?.servicioInaccesible == true
 
+internal fun Throwable.avisoDeActualizacion(): String =
+    "${message ?: "No se pudo actualizar la información."} Se conserva la última copia guardada. " +
+        if (esCaidaDeServicio()) "Los envíos pendientes siguen guardados; puedes reintentar." else ""
+
 /** Room es la copia consultable y la cola durable. Solo el servidor confirma disponibilidad. */
 internal class RespaldoRemoto(private val db: AppDatabase, private val tipo: String) {
     private val dao = db.respaldoDao()

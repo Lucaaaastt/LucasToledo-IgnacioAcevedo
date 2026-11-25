@@ -58,6 +58,7 @@ class CapaRegistro: ComponentActivity() {
             val passwordEsValida = passwordValida(password)
 
             var guardando by remember { mutableStateOf(false) }
+            var errorRegistro by remember { mutableStateOf<String?>(null) }
             var intentoGuardar by remember { mutableStateOf(false) }
 
             val errorNombre = intentoGuardar && !nombreEsValido
@@ -85,6 +86,7 @@ class CapaRegistro: ComponentActivity() {
                         .padding(horizontal = 32.dp, vertical = 16.dp)
                 ) {
                     TextField(
+                        enabled = !guardando,
                         value = nombre,
                         onValueChange = { nombre = it },
                         label = { Text("Ingrese Nombre") },
@@ -101,6 +103,7 @@ class CapaRegistro: ComponentActivity() {
                     )
 
                     TextField(
+                        enabled = !guardando,
                         value = correo,
                         onValueChange = { correo = it },
                         label = { Text("Ingrese Correo") },
@@ -119,6 +122,7 @@ class CapaRegistro: ComponentActivity() {
                     )
 
                     TextField(
+                        enabled = !guardando,
                         value = password,
                         onValueChange = { password = it },
                         label = { Text("Contraseña") },
@@ -152,8 +156,11 @@ class CapaRegistro: ComponentActivity() {
                         Text(text = "Mostrar Contraseña")
                     }
 
+                    errorRegistro?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     Column(Modifier.padding(horizontal = 90.dp)) {
                         Button(onClick = {
+                            if (guardando) return@Button
+                            errorRegistro = null
                             intentoGuardar = true
                             if (nombreEsValido && correoEsValido && passwordEsValida) {
                                 guardando = true
@@ -167,7 +174,7 @@ class CapaRegistro: ComponentActivity() {
                                         startActivity(Intent(this@CapaRegistro, MainActivity::class.java))
                                         finish()
                                     } catch (error: ErrorUsuarios) {
-                                        Toast.makeText(context, error.message, Toast.LENGTH_LONG).show()
+                                        errorRegistro = error.message ?: "No se pudo registrar la cuenta. Inténtalo nuevamente."
                                     } finally {
                                         guardando = false
                                     }
@@ -177,7 +184,7 @@ class CapaRegistro: ComponentActivity() {
                                     .show()
                             }
                         }, enabled = !guardando) {
-                            Text(if (guardando) "Guardando…" else "Ingresar")
+                            Text(if (guardando) "Guardando…" else if (errorRegistro != null) "Reintentar" else "Ingresar")
                         }
                     }
                 }

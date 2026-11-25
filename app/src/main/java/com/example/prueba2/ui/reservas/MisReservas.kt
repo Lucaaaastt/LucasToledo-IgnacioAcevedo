@@ -192,12 +192,15 @@ class MisReservas : ComponentActivity() {
                             )
                         }
                         val estado by flujo.collectAsState(initial = EstadoMisReservas())
+                        val actualizando by repository.actualizando.collectAsState()
 
                         MisReservasPantalla(
                             reservas = estado.reservas,
                             cargando = estado.cargando,
                             errorCarga = estado.error,
                             avisoConexion = estado.avisoConexion,
+                            actualizando = actualizando,
+                            onReintentar = viewModel::reintentarCarga,
                             onDescartarError = viewModel::descartarError,
                             onVolver = { finish() },
                             titulo = if (esAdministrador) "Solicitudes pendientes" else "Mis reservas",

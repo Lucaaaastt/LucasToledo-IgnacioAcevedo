@@ -230,7 +230,7 @@ fun NuevaReservaPantalla(
             },
             confirmButton = {
                 TextButton(onClick = onEnviar, enabled = !estado.guardando) {
-                    Text(if (estado.guardando) "Enviando…" else "Enviar solicitud")
+                    Text(if (estado.guardando) "Guardando y enviando…" else if (estado.errorGuardado != null) "Reintentar envío" else "Enviar solicitud")
                 }
             },
             dismissButton = {
@@ -242,8 +242,12 @@ fun NuevaReservaPantalla(
     if (estado.reservaGuardadaId != null) {
         AlertDialog(
             onDismissRequest = onCerrarExito,
-            title = { Text(if (estado.pendienteEnvio) "Solicitud guardada en el dispositivo" else "Solicitud enviada") },
-            text = { Text(if (estado.pendienteEnvio) "Se enviará al recuperar conexión con la app abierta. El servidor comprobará el horario antes de aceptarla; aún no está reservado." else "Tu solicitud fue recibida por el servidor y está pendiente de aprobación del administrador. El horario quedó ocupado.") },
+            title = { Text(if (estado.reservaGuardadaId!! > 0) "Solicitud guardada en el dispositivo" else "Solicitud enviada") },
+            text = { Text(when {
+                estado.pendienteEnvio -> "Se enviará al recuperar conexión con la app abierta. El servidor comprobará el horario antes de aceptarla; aún no está reservado."
+                estado.reservaGuardadaId > 0 -> "Esta cuenta guarda sus solicitudes en este dispositivo. La solicitud está pendiente de aprobación local."
+                else -> "Tu solicitud fue recibida por el servidor y está pendiente de aprobación del administrador. El horario quedó ocupado."
+            }) },
             confirmButton = {
                 TextButton(onClick = onCerrarExito) { Text("Ver mis reservas") }
             }

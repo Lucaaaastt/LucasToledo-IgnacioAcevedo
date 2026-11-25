@@ -2,6 +2,7 @@ package com.example.prueba2.data.remote
 
 import com.example.prueba2.BuildConfig
 import java.io.IOException
+import java.net.SocketTimeoutException
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
@@ -65,8 +66,10 @@ internal class UsuariosApi(private val baseUrl: String = BuildConfig.USUARIOS_AP
                 } finally {
                     conexion.disconnect()
                 }
+            } catch (_: SocketTimeoutException) {
+                throw ErrorUsuarios(servicioInaccesible = true, mensaje = "El servidor tarda en responder. Espera unos segundos y vuelve a intentarlo.")
             } catch (_: IOException) {
-                throw ErrorUsuarios(servicioInaccesible = true, mensaje = "No se pudo conectar al servicio de usuarios.")
+                throw ErrorUsuarios(servicioInaccesible = true, mensaje = "No se pudo conectar al servicio de usuarios. Revisa tu conexión a internet y vuelve a intentarlo.")
             }
         }
 
