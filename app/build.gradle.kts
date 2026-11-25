@@ -9,6 +9,8 @@ plugins {
 
 val urlUsuarios = providers.gradleProperty("usuariosApiUrl")
 val urlEspacios = providers.gradleProperty("espaciosApiUrl")
+val usuariosRelease = urlUsuarios.orElse("https://marcelapaz-usuarios.onrender.com")
+val espaciosRelease = urlEspacios.orElse("https://marcelapaz-reservas.onrender.com")
 
 fun urlComoLiteral(url: String): String {
     val uri = if (url.isEmpty()) null else URI(url)
@@ -41,10 +43,10 @@ android {
                 urlComoLiteral(urlEspacios.orElse("http://10.0.2.2:8080").get()))
         }
         release {
-            val url = urlUsuarios.orElse("").get()
+            val url = usuariosRelease.get()
             buildConfigField("String", "USUARIOS_API_URL",
                 urlComoLiteral(if (url.startsWith("https://")) url else ""))
-            val espacios = urlEspacios.orElse("").get()
+            val espacios = espaciosRelease.get()
             buildConfigField("String", "ESPACIOS_API_URL",
                 urlComoLiteral(if (espacios.startsWith("https://")) espacios else ""))
             optimization {
@@ -72,8 +74,8 @@ kotlin {
 
 // Evita entregar un instalador release sin conexión a los servicios.
 tasks.matching { it.name == "preReleaseBuild" }.configureEach {
-    inputs.property("usuariosApiUrl", urlUsuarios.orElse(""))
-    inputs.property("espaciosApiUrl", urlEspacios.orElse(""))
+    inputs.property("usuariosApiUrl", usuariosRelease)
+    inputs.property("espaciosApiUrl", espaciosRelease)
     doFirst {
         for (propiedad in listOf("usuariosApiUrl", "espaciosApiUrl")) {
             val url = inputs.properties[propiedad] as String

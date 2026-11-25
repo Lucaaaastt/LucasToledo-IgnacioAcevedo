@@ -139,15 +139,15 @@ La revisión estática confirmó una firma APK v2 válida con certificado `CN=Ma
 
 ### Cómo generar el instalador conectado
 
-1. Tener ambos servicios desplegados y comprobar sus dos URL HTTPS. En reservas, configurar `USUARIOS_API_URL` con la URL del servicio de usuarios; cada servicio mantiene su conexión correspondiente a Neon.
-2. En el equipo que compila, definir en `~/.gradle/gradle.properties` (Windows: `%USERPROFILE%\.gradle\gradle.properties`):
+1. Release utiliza por defecto `https://marcelapaz-usuarios.onrender.com` y `https://marcelapaz-reservas.onrender.com`. Comprobar ambos servicios antes de entregar. En reservas, `USUARIOS_API_URL` apunta al servicio de usuarios; cada uno mantiene su conexión correspondiente a Neon.
+2. Solo si se necesitan otros destinos, en el equipo que compila definir en `~/.gradle/gradle.properties` (Windows: `%USERPROFILE%\.gradle\gradle.properties`):
 
 ```properties
 usuariosApiUrl=https://URL_REAL_DEL_SERVICIO_USUARIOS
 espaciosApiUrl=https://URL_REAL_DEL_SERVICIO_RESERVAS
 ```
 
-Reemplazar los valores de ejemplo por las direcciones reales. La compilación release comprueba que ambas propiedades tengan una URL HTTPS; debug conserva su configuración de desarrollo. El proyecto no incluye un despliegue en Render por defecto.
+Reemplazar los valores de ejemplo por las direcciones reales. La compilación release comprueba que ambas propiedades tengan una URL HTTPS; debug conserva su configuración de desarrollo. Los valores por defecto de release corresponden a los servicios creados para este proyecto en Render.
 
 3. En Android Studio, ir a **Build → Generate Signed App Bundle or APK…**, elegir **APK** y la variante **release**.
 4. Usar el mismo keystore de la entrega del compañero, su alias y sus contraseñas. Según su documentación, se llama **MarceltaKtKey** y se guarda fuera del repositorio en `E:\keystores\`. Esa ruta corresponde a su equipo; no es una dependencia incluida en Git.
@@ -157,7 +157,7 @@ Reemplazar los valores de ejemplo por las direcciones reales. La compilación re
 Para una comprobación de compilación sin firma:
 
 ```bash
-bash ./gradlew :app:assembleRelease -PusuariosApiUrl=https://URL_REAL_DEL_SERVICIO_USUARIOS -PespaciosApiUrl=https://URL_REAL_DEL_SERVICIO_RESERVAS
+bash ./gradlew :app:assembleRelease
 ```
 
 El resultado sin firma no es el instalador final de entrega. Conservar el keystore original permite actualizar el instalador firmado por el compañero; las claves y sus contraseñas no se versionan. Las credenciales de Neon se configuran únicamente en el backend y no se incluyen en el APK.
