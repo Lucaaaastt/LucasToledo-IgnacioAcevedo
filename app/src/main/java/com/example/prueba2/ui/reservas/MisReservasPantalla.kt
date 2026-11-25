@@ -83,6 +83,8 @@ fun MisReservasPantalla(
     onVolver: () -> Unit,
     cargando: Boolean = false,
     errorCarga: String? = null,
+    avisoConexion: String? = null,
+    onDescartarError: (ReservaResumen) -> Unit = {},
     titulo: String = "Mis reservas",
     descripcion: String = "Consulta los datos de tus reservas.",
     mensajeVacio: String = "Aún no tienes solicitudes de reserva.",
@@ -150,6 +152,7 @@ fun MisReservasPantalla(
                     }
                 }
             }
+            avisoConexion?.let { aviso -> item { Text(aviso, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
             errorCarga?.let { mensaje ->
                 item { Text(mensaje, color = MaterialTheme.colorScheme.error) }
             }
@@ -168,6 +171,7 @@ fun MisReservasPantalla(
                         mostrarAccionesAdministrativas = mostrarAccionesAdministrativas,
                         accionesHabilitadas = !decision.guardando,
                         onSolicitarDecision = onSolicitarDecision,
+                        onDescartarError = onDescartarError,
                         onAgregarAlCalendario = onAgregarAlCalendario
                     )
                 }
@@ -219,7 +223,8 @@ private fun ReservaTarjeta(
     mostrarAccionesAdministrativas: Boolean,
     accionesHabilitadas: Boolean,
     onSolicitarDecision: (ReservaResumen, EstadoReserva) -> Unit,
-    onAgregarAlCalendario: (ReservaResumen) -> Unit
+    onAgregarAlCalendario: (ReservaResumen) -> Unit,
+    onDescartarError: (ReservaResumen) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -263,13 +268,22 @@ private fun ReservaTarjeta(
                         when (reserva.estado) {
                             EstadoReserva.APROBADA -> "Aprobada"
                             EstadoReserva.RECHAZADA -> "Rechazada"
-                            EstadoReserva.PENDIENTE -> "Pendiente de aprobación"
+                            EstadoReserva.PENDIENTE -> when {
+                                reserva.errorEnvio != null -> "No enviada"
+                                reserva.pendienteEnvio -> "Pendiente de envío"
+                                else -> "Pendiente de aprobación"
+                            }
                         },
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
             }
 
+            if (reserva.pendienteEnvio) Text("Guardada en el dispositivo. Se enviará al recuperar conexión; todavía no bloquea el horario.")
+            reserva.errorEnvio?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
+                TextButton(onClick = { onDescartarError(reserva) }) { Text("Descartar solicitud no enviada") }
+            }
             ReservaDato(Icons.Default.DateRange, reserva.fecha.format(formatoFecha))
             ReservaDato(
                 Icons.Default.Schedule,

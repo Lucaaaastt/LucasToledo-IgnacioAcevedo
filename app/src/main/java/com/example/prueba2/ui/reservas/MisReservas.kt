@@ -1,5 +1,6 @@
 package com.example.prueba2.ui.reservas
 
+import com.example.prueba2.data.repository.sincronizarPendientes
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -59,6 +60,7 @@ class MisReservas : ComponentActivity() {
         )
 
         val usuarioId = intent.getIntExtra("USER_ID", -1)
+        sincronizarPendientes(usuarioId)
         val esAdministrador = intent.getStringExtra("USER_ROL") == "ADMIN"
         if (usuarioId <= 0) {
             Toast.makeText(this, "Vuelve a iniciar sesión para consultar tus reservas.", Toast.LENGTH_LONG).show()
@@ -73,6 +75,7 @@ class MisReservas : ComponentActivity() {
                 return if (esAdministrador) {
                     MisReservasViewModel.paraAdministrador(
                         repository.obtenerPendientes(usuarioId),
+                        avisoConexion = repository.avisoConexion,
                         decisionGuardada = { reserva, estado ->
                             val contexto = applicationContext
                             if (androidx.core.content.ContextCompat.checkSelfPermission(
@@ -85,7 +88,9 @@ class MisReservas : ComponentActivity() {
                         repository.resolverSolicitud(usuarioId, reservaId, decision)
                     }
                 } else {
-                    MisReservasViewModel(repository.obtenerPorUsuario(usuarioId))
+                    MisReservasViewModel(repository.obtenerPorUsuario(usuarioId), repository.avisoConexion) { id ->
+                        repository.descartarError(usuarioId, id)
+                    }
                 } as T
             }
         }
@@ -192,6 +197,8 @@ class MisReservas : ComponentActivity() {
                             reservas = estado.reservas,
                             cargando = estado.cargando,
                             errorCarga = estado.error,
+                            avisoConexion = estado.avisoConexion,
+                            onDescartarError = viewModel::descartarError,
                             onVolver = { finish() },
                             titulo = if (esAdministrador) "Solicitudes pendientes" else "Mis reservas",
                             descripcion = if (esAdministrador) "Solicitudes enviadas por los usuarios para revisión." else "Consulta los datos de tus reservas.",

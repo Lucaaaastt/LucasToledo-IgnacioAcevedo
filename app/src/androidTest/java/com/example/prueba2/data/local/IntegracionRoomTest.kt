@@ -52,9 +52,9 @@ class IntegracionRoomTest {
             db.version = 5
         }
         val database = Room.databaseBuilder(context, AppDatabase::class.java, nombre)
-            .addMigrations(AppDatabase.MIGRATION_5_6).build()
+            .addMigrations(AppDatabase.MIGRATION_5_6, AppDatabase.MIGRATION_6_7).build()
         try {
-            assertEquals(6, database.openHelper.writableDatabase.version)
+            assertEquals(7, database.openHelper.writableDatabase.version)
             val usuario = database.usuarioDao().obtenerPorId(1)
             assertEquals("Ana", usuario?.nombre)
             assertEquals("clave-original", usuario?.password)

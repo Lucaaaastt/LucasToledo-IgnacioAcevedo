@@ -6,6 +6,7 @@ data class EstadoMisReservas(
     val reservas: List<ReservaResumen> = emptyList(),
     val cargando: Boolean = true,
     val error: String? = null,
+    val avisoConexion: String? = null,
     val decision: EstadoDecisionReserva = EstadoDecisionReserva()
 )
 

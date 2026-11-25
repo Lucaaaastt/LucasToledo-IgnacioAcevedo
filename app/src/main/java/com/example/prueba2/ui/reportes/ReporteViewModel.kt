@@ -18,6 +18,8 @@ class ReporteViewModel(
     private val repository: ReporteRepository
 ) : ViewModel() {
 
+    val avisoConexion = repository.avisoConexion
+
     private val _reportesUsuario = MutableStateFlow<List<ReporteIncidencia>>(emptyList())
     val reportesUsuario: StateFlow<List<ReporteIncidencia>> = _reportesUsuario.asStateFlow()
 
@@ -75,8 +77,11 @@ class ReporteViewModel(
                     descripcion = descripcion,
                     fotoUri = fotoUri
                 )
-                repository.enviarReporte(nuevoReporte)
-                _mensajeExito.value = "Reporte de incidencia enviado correctamente."
+                val id = repository.enviarReporte(nuevoReporte)
+                _mensajeExito.value = if (id > Long.MAX_VALUE / 2)
+                    "Reporte guardado en el dispositivo. Se enviará al recuperar conexión con la app abierta."
+                else "Reporte de incidencia enviado correctamente."
+                cargarReportesUsuario(usuarioId)
             } catch (cancelacion: CancellationException) {
                 throw cancelacion
             } catch (e: Exception) {
@@ -101,6 +106,7 @@ class ReporteViewModel(
             try {
                 repository.responderReporte(administradorId, reporteId, comentario)
                 _mensajeExito.value = "Respuesta enviada y reporte marcado como revisado."
+                cargarTodosLosReportes(administradorId)
             } catch (cancelacion: CancellationException) {
                 throw cancelacion
             } catch (e: Exception) {
@@ -108,6 +114,17 @@ class ReporteViewModel(
             } finally {
                 _cargando.value = false
             }
+        }
+    }
+
+    fun descartarError(usuarioId: Int, reporte: ReporteIncidencia) {
+        if (reporte.errorEnvio == null) return
+        viewModelScope.launch {
+            try {
+                repository.descartarError(usuarioId, reporte.id)
+                cargarReportesUsuario(usuarioId)
+            } catch (cancelacion: CancellationException) { throw cancelacion }
+            catch (_: Exception) { _mensajeError.value = "No se pudo descartar el reporte." }
         }
     }
 

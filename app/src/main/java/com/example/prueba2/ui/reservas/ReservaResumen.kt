@@ -15,7 +15,9 @@ data class ReservaResumen(
     val horaTermino: LocalTime,
     val motivo: String,
     val estado: EstadoReserva = EstadoReserva.PENDIENTE,
-    val solicitanteNombre: String? = null
+    val solicitanteNombre: String? = null,
+    val pendienteEnvio: Boolean = false,
+    val errorEnvio: String? = null
 )
 
 internal fun Reserva.aResumenReserva(): ReservaResumen {
@@ -29,6 +31,6 @@ internal fun Reserva.aResumenReserva(): ReservaResumen {
         horaInicio = horaInicio,
         horaTermino = horaTermino,
         motivo = motivo,
-        estado = estado
+        estado = estado, pendienteEnvio = pendienteEnvio, errorEnvio = errorEnvio
     )
 }

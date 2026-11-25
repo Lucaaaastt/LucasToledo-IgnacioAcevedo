@@ -9,8 +9,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Usuario::class, Reserva::class, EspacioCatalogoLocal::class, ReporteIncidencia::class],
-    version = 6,
+    entities = [Usuario::class, Reserva::class, EspacioCatalogoLocal::class, ReporteIncidencia::class, CopiaRemota::class, EnvioPendiente::class],
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(ReservaConverters::class)
@@ -18,6 +18,7 @@ abstract class AppDatabase : RoomDatabase (){
     abstract fun usuarioDao(): UsuarioDao
     abstract fun reservaDao(): ReservaDao
     abstract fun reporteDao(): ReporteDao
+    internal abstract fun respaldoDao(): RespaldoDao
     internal abstract fun catalogoEspaciosDao(): CatalogoEspaciosDao
 
     companion object {
@@ -101,13 +102,29 @@ abstract class AppDatabase : RoomDatabase (){
             }
         }
 
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                for (tabla in listOf("reservas", "reportes_incidencia")) {
+                    db.execSQL("ALTER TABLE $tabla ADD COLUMN pendienteEnvio INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("ALTER TABLE $tabla ADD COLUMN errorEnvio TEXT DEFAULT NULL")
+                }
+                db.execSQL("""CREATE TABLE copias_remotas (
+                    usuarioId INTEGER NOT NULL, tipo TEXT NOT NULL, remotoId INTEGER NOT NULL, datos TEXT NOT NULL,
+                    PRIMARY KEY(usuarioId, tipo, remotoId))""")
+                db.execSQL("""CREATE TABLE envios_pendientes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    clave TEXT NOT NULL, usuarioId INTEGER NOT NULL, tipo TEXT NOT NULL,
+                    datos TEXT NOT NULL, remotoId INTEGER, error TEXT)""")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "colegioMP_db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build()
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7).build()
                 INSTANCE = instance
                 instance
             }

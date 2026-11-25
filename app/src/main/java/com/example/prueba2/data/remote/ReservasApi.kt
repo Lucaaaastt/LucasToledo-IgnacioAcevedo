@@ -19,7 +19,8 @@ import org.json.JSONObject
 
 internal class ErrorReservaRemota(
     val estado: Int? = null,
-    mensaje: String
+    mensaje: String,
+    val servicioInaccesible: Boolean = false
 ) : Exception(mensaje)
 
 internal class ReservasApi(private val baseUrl: String = BuildConfig.ESPACIOS_API_URL) {
@@ -29,13 +30,21 @@ internal class ReservasApi(private val baseUrl: String = BuildConfig.ESPACIOS_AP
             .put("horaInicio", reserva.horaInicio.toString())
             .put("horaTermino", reserva.horaTermino.toString())
             .put("motivo", reserva.motivo)
-        return JSONObject(enviar(usuario, "POST", "", 201, datos)).getLong("id")
+        return crearDatos(usuario, datos)
     }
 
-    suspend fun listar(usuario: Usuario, pendientes: Boolean): List<ReservaConSolicitante> {
-        val ruta = if (pendientes) "/pendientes" else "/mias"
+    suspend fun crearDatos(usuario: Usuario, datos: JSONObject): Long =
+        JSONObject(enviar(usuario, "POST", "", 201, datos)).getLong("id")
+
+    suspend fun obtenerListado(usuario: Usuario, pendientes: Boolean): String =
+        enviar(usuario, "GET", if (pendientes) "/pendientes" else "/mias", 200)
+
+    suspend fun listar(usuario: Usuario, pendientes: Boolean): List<ReservaConSolicitante> =
+        leerListado(usuario, obtenerListado(usuario, pendientes))
+
+    fun leerListado(usuario: Usuario, json: String): List<ReservaConSolicitante> {
         try {
-            val datos = JSONArray(enviar(usuario, "GET", ruta, 200))
+            val datos = JSONArray(json)
             return List(datos.length()) { indice ->
                 val fila = datos.getJSONObject(indice)
                 ReservaConSolicitante(
@@ -86,17 +95,17 @@ internal class ReservasApi(private val baseUrl: String = BuildConfig.ESPACIOS_AP
                         400 -> "Revisa la fecha, el horario y el motivo."
                         401, 403 -> "La cuenta no tiene acceso. Vuelve a iniciar sesión."
                         404 -> "El espacio no está disponible en el catálogo del servidor."
-                        409 -> "La solicitud o el horario ya cambió. Actualiza el listado."
+                        409 -> "El horario está ocupado. La solicitud no se envió; crea otra con un horario diferente."
                         else -> "No se pudo acceder al servicio de reservas. Intenta nuevamente."
                     }
-                    throw ErrorReservaRemota(status, mensaje)
+                    throw ErrorReservaRemota(status, mensaje, servicioInaccesible = status >= 500)
                 }
                 if (esperado == 204) "" else conexion.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
             } finally {
                 conexion.disconnect()
             }
         } catch (_: IOException) {
-            throw ErrorReservaRemota(mensaje = "No se pudo conectar al servicio de reservas.")
+            throw ErrorReservaRemota(mensaje = "No se pudo conectar al servicio de reservas.", servicioInaccesible = true)
         }
     }
 }

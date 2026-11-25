@@ -8,6 +8,7 @@ import com.example.prueba2.data.local.ReservaConSolicitante
 import com.example.prueba2.data.remote.ErrorReservaRemota
 import com.example.prueba2.data.repository.ReservaNoDisponibleException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
@@ -22,17 +23,22 @@ class MisReservasViewModel private constructor(
     resumenes: Flow<List<ReservaResumen>>,
     mensajeError: String,
     private val resolverSolicitud: (suspend (Long, EstadoReserva) -> Unit)? = null,
-    private val decisionGuardada: (ReservaResumen, EstadoReserva) -> Unit = { _, _ -> }
+    private val decisionGuardada: (ReservaResumen, EstadoReserva) -> Unit = { _, _ -> },
+    avisoConexion: Flow<String?> = flowOf(null),
+    private val descartar: (suspend (Long) -> Unit)? = null
 ) : ViewModel() {
-    constructor(reservas: Flow<List<Reserva>>) : this(
+    constructor(reservas: Flow<List<Reserva>>, avisoConexion: Flow<String?> = flowOf(null),
+                descartar: (suspend (Long) -> Unit)? = null) : this(
         reservas.map { lista -> lista.map { it.aResumenReserva() } },
-        "No se pudieron cargar tus reservas. Vuelve al menú e inténtalo nuevamente."
+        "No se pudieron cargar tus reservas. Vuelve al menú e inténtalo nuevamente.",
+        avisoConexion = avisoConexion, descartar = descartar
     )
 
     companion object {
         fun paraAdministrador(
             reservas: Flow<List<ReservaConSolicitante>>,
             decisionGuardada: (ReservaResumen, EstadoReserva) -> Unit = { _, _ -> },
+            avisoConexion: Flow<String?> = flowOf(null),
             resolverSolicitud: suspend (Long, EstadoReserva) -> Unit
         ) = MisReservasViewModel(
             reservas.map { lista ->
@@ -40,7 +46,7 @@ class MisReservasViewModel private constructor(
             },
             "No se pudieron cargar las solicitudes. Verifica tu sesión de administrador e inténtalo nuevamente.",
             resolverSolicitud,
-            decisionGuardada
+            decisionGuardada, avisoConexion
         )
     }
 
@@ -59,6 +65,16 @@ class MisReservasViewModel private constructor(
 
     val estado: Flow<EstadoMisReservas> = combine(listado, decision) { lista, accion ->
         lista.copy(decision = accion)
+    }.combine(avisoConexion) { lista, aviso -> lista.copy(avisoConexion = aviso) }
+
+    fun descartarError(reserva: ReservaResumen) {
+        val borrar = descartar ?: return
+        if (reserva.errorEnvio == null) return
+        viewModelScope.launch {
+            try { borrar(reserva.id.toLong()) }
+            catch (cancelacion: CancellationException) { throw cancelacion }
+            catch (_: Exception) { decision.value = EstadoDecisionReserva(mensaje = "No se pudo descartar la solicitud.") }
+        }
     }
 
     fun solicitarDecision(reserva: ReservaResumen, estado: EstadoReserva) {

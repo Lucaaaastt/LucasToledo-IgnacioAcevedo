@@ -1,5 +1,6 @@
 package com.example.prueba2.ui.reservas
 
+import com.example.prueba2.data.repository.sincronizarPendientes
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -54,6 +55,7 @@ class NuevaReserva : ComponentActivity() {
         )
 
         val usuarioId = intent.getIntExtra("USER_ID", -1)
+        sincronizarPendientes(usuarioId)
         if (usuarioId <= 0) {
             Toast.makeText(this, "Vuelve a iniciar sesión para enviar una solicitud.", Toast.LENGTH_LONG).show()
             finish()
