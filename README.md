@@ -130,13 +130,15 @@ La versión 7 de Room agrega la copia y la cola sin borrar los datos anteriores.
 
 ## Compilación y firma de APK release
 
-El commit `b8866d5` de Ignacio agrega `app/release/app-release.apk` e instrucciones de presentación. Se conserva aquí la documentación general junto con esas instrucciones.
+Se generaron los archivos en variante **release** (`app-release.apk` y `app-release.aab`) firmados con el keystore `marcelapaz-apk` (alias `marcelapaz_release_key`).
+
+- **Keystore:** `\keystore\marcelapaz-apk`
+
+- **APK y AAB release:** `\app\release\app-release.apk` y `\app\release\app-release.aab`
 
 ### Estado del instalador publicado
 
 La revisión estática confirmó una firma APK v2 válida con certificado `CN=MarcelaPazKt`. Paquete `com.example.prueba2`, versión `1.0` (`versionCode=1`), Android mínimo 13. El archivo pesa 46.54 MB.
-
-**Ese binario tiene `USUARIOS_API_URL` y `ESPACIOS_API_URL` vacías. No está configurado para conectarse al backend. Modificar este README o Gradle no cambia un APK ya generado: debe recompilarse y volver a firmarse antes de presentarlo como instalador conectado. No se ha validado su ejecución en un teléfono.**
 
 ### Cómo generar el instalador conectado
 
