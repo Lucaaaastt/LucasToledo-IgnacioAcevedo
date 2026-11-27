@@ -20,7 +20,7 @@ internal class CatalogoEspaciosApi(
             val conexion = URI("$baseUrl/api/espacios").toURL().openConnection() as HttpURLConnection
             try {
                 conexion.connectTimeout = 5_000
-                conexion.readTimeout = 5_000
+                conexion.readTimeout = TIEMPO_LECTURA_SERVIDOR_MS
                 conexion.instanceFollowRedirects = false
                 conexion.setRequestProperty("Accept", "application/json")
                 if (conexion.responseCode != 200) return@withContext null

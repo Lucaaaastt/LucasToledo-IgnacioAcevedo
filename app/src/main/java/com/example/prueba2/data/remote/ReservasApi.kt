@@ -81,7 +81,7 @@ internal class ReservasApi(private val baseUrl: String = BuildConfig.ESPACIOS_AP
                 conexion.requestMethod = metodo
                 conexion.instanceFollowRedirects = false
                 conexion.connectTimeout = 5_000
-                conexion.readTimeout = 7_000
+                conexion.readTimeout = TIEMPO_LECTURA_SERVIDOR_MS
                 val credenciales = "${usuario.correo}:${usuario.password}".toByteArray(Charsets.UTF_8)
                 conexion.setRequestProperty("Authorization", "Basic " + Base64.encodeToString(credenciales, Base64.NO_WRAP))
                 conexion.setRequestProperty("Accept", "application/json")

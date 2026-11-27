@@ -52,7 +52,7 @@ internal class UsuariosApi(private val baseUrl: String = BuildConfig.USUARIOS_AP
                     conexion.requestMethod = "POST"
                     conexion.instanceFollowRedirects = false
                     conexion.connectTimeout = 5_000
-                    conexion.readTimeout = 5_000
+                    conexion.readTimeout = TIEMPO_LECTURA_SERVIDOR_MS
                     conexion.doOutput = true
                     conexion.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
                     conexion.outputStream.use { it.write(datos.toString().toByteArray(Charsets.UTF_8)) }

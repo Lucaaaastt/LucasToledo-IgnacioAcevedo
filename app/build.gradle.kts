@@ -8,9 +8,9 @@ plugins {
 }
 
 val urlUsuarios = providers.gradleProperty("usuariosApiUrl")
+    .orElse("https://marcelapaz-usuarios.onrender.com")
 val urlEspacios = providers.gradleProperty("espaciosApiUrl")
-val usuariosRelease = urlUsuarios.orElse("https://marcelapaz-usuarios.onrender.com")
-val espaciosRelease = urlEspacios.orElse("https://marcelapaz-reservas.onrender.com")
+    .orElse("https://marcelapaz-reservas.onrender.com")
 
 fun urlComoLiteral(url: String): String {
     val uri = if (url.isEmpty()) null else URI(url)
@@ -38,15 +38,15 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "USUARIOS_API_URL",
-                urlComoLiteral(urlUsuarios.orElse("http://10.0.2.2:8081").get()))
+                urlComoLiteral(urlUsuarios.get()))
             buildConfigField("String", "ESPACIOS_API_URL",
-                urlComoLiteral(urlEspacios.orElse("http://10.0.2.2:8080").get()))
+                urlComoLiteral(urlEspacios.get()))
         }
         release {
-            val url = usuariosRelease.get()
+            val url = urlUsuarios.get()
             buildConfigField("String", "USUARIOS_API_URL",
                 urlComoLiteral(if (url.startsWith("https://")) url else ""))
-            val espacios = espaciosRelease.get()
+            val espacios = urlEspacios.get()
             buildConfigField("String", "ESPACIOS_API_URL",
                 urlComoLiteral(if (espacios.startsWith("https://")) espacios else ""))
             optimization {
@@ -74,8 +74,8 @@ kotlin {
 
 // Evita entregar un instalador release sin conexión a los servicios.
 tasks.matching { it.name == "preReleaseBuild" }.configureEach {
-    inputs.property("usuariosApiUrl", usuariosRelease)
-    inputs.property("espaciosApiUrl", espaciosRelease)
+    inputs.property("usuariosApiUrl", urlUsuarios)
+    inputs.property("espaciosApiUrl", urlEspacios)
     doFirst {
         for (propiedad in listOf("usuariosApiUrl", "espaciosApiUrl")) {
             val url = inputs.properties[propiedad] as String

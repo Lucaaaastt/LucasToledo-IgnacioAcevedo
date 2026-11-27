@@ -46,16 +46,14 @@ com.example.prueba2/
 
 El flujo de reservas utiliza MVVM para separar la interfaz, el estado y el acceso a los datos.
 
-## Pasos de ejecucion
+## Ejecutar la app en otro equipo
 
-1. Clonar o descargar este repositorio.
-2. Abrir la carpeta del proyecto en Android Studio.
-3. Sincronizar el proyecto con Gradle y esperar a que se descarguen las dependencias.
-4. Crear un emulador movil con version 13 o mas
-5. Ejecutar el modulo app con el boton Run.
-6. Registrar una cuenta e iniciar sesion para utilizar la aplicacion.
+1. Clona este repositorio y abre la rama `main` en Android Studio. Si tienes el ZIP del proyecto, descomprímelo y abre la carpeta que contiene `settings.gradle.kts`.
+2. Sincroniza Gradle con acceso a Internet e instala Android SDK Platform 37 si Studio lo solicita. Gradle usa Java 21 para su proceso y Java 11 para compilar el módulo.
+3. Selecciona un emulador o un teléfono con Android 13 o superior. Ejecuta el módulo `app` con **Run**.
+4. Registra una cuenta o inicia sesión con una cuenta existente del backend.
 
-Antes de usar las funciones compartidas, ejecutar ambos servicios siguiendo el [README del backend](../backend/README.md). Una instalación nueva no incluye cuentas guardadas localmente.
+Debug y release se conectan por HTTPS a Usuarios y Espacios y Reservas en Render. El equipo necesita acceso a Internet. Tras un periodo de inactividad, los servicios gratuitos pueden tardar en arrancar y la app espera hasta 75 segundos para leer la respuesta. Un APK conectado también puede instalarse en un dispositivo Android compatible desde el PC, con `adb install -r RUTA_DEL_APK`.
 
 ## Planificacion
 
@@ -67,23 +65,26 @@ Las cuentas conectadas al backend guardan sus nuevos registros, reservas y repor
 
 ## Registro e inicio de sesión con el backend
 
-1. Configura y ejecuta `ms-usuarios` siguiendo su README. Usa cuentas ficticias para la demo.
-2. Ejecuta Android en modo debug en el emulador. La app usa `http://10.0.2.2:8081` para llegar al servicio local.
-3. Registra un solicitante o un administrador e inicia sesión. Para registrar un administrador, ingresa el código configurado en `CODIGO_REGISTRO_ADMIN` en el servicio.
-
-Para usar otro destino, configura `usuariosApiUrl` como propiedad de Gradle. En un teléfono conectado por USB puedes usar `adb reverse tcp:8081 tcp:8081` y compilar con `-PusuariosApiUrl=http://127.0.0.1:8081`. Para release, configura una URL HTTPS.
+La app usa `https://marcelapaz-usuarios.onrender.com` por defecto. Registra un solicitante o un administrador e inicia sesión. Para registrar un administrador, ingresa el código configurado en `CODIGO_REGISTRO_ADMIN` en el servicio.
 
 El registro requiere conexión. Si el servicio no está disponible, el login puede usar una cuenta ya guardada en ese dispositivo. Cuando el servidor rechaza las credenciales, Android muestra el error. Las cuentas conectadas usan reservas compartidas; las anteriores de Room se conservan. Si una cuenta de Room anterior a la integración todavía no existe en el servidor, registra el mismo correo y contraseña e inicia sesión para vincularla sin perder sus reservas locales.
 
 ## Catálogo de espacios
 
-Ejecuta `ms-espacios-reservas` en el puerto 8080. Al abrir **Nueva reserva**, Android
+La app usa `https://marcelapaz-reservas.onrender.com` por defecto. Al abrir **Nueva reserva**, Android
 consulta `GET /api/espacios` y guarda el catálogo en Room. Si falla la consulta,
 usa la última copia guardada. Una instalación sin copia usa el catálogo incluido.
 
-En debug, el emulador usa `http://10.0.2.2:8080`. Puedes cambiar el destino con
-`-PespaciosApiUrl=URL`; para release usa HTTPS. En un teléfono por USB,
-usa `adb reverse tcp:8080 tcp:8080` y `-PespaciosApiUrl=http://127.0.0.1:8080`.
+## Usar el backend local para desarrollo
+
+Levanta ambos servicios siguiendo el [README del backend](https://github.com/Lucaaaastt/LucasToledo-IgnacioAcevedoBackendKt/tree/main). Para conectar un emulador a tu PC, genera un APK debug con estas propiedades desde PowerShell.
+
+```powershell
+.\gradlew.bat :app:assembleDebug "-PusuariosApiUrl=http://10.0.2.2:8081" "-PespaciosApiUrl=http://10.0.2.2:8080"
+```
+
+En un teléfono por USB, ejecuta `adb reverse tcp:8081 tcp:8081` y `adb reverse tcp:8080 tcp:8080`. En las dos propiedades usa `127.0.0.1` en lugar de `10.0.2.2`. Las propiedades también permiten elegir otros destinos HTTPS. Release exige HTTPS.
+
 ## Reservas compartidas
 
 Las cuentas vinculadas al servidor crean y consultan sus solicitudes en
@@ -147,7 +148,7 @@ usuariosApiUrl=https://URL_REAL_DEL_SERVICIO_USUARIOS
 espaciosApiUrl=https://URL_REAL_DEL_SERVICIO_RESERVAS
 ```
 
-Reemplazar los valores de ejemplo por las direcciones reales. La compilación release comprueba que ambas propiedades tengan una URL HTTPS; debug conserva su configuración de desarrollo. Los valores por defecto de release corresponden a los servicios creados para este proyecto en Render.
+Reemplazar los valores de ejemplo por las direcciones reales. Release exige dos URL HTTPS. Los valores predeterminados en debug y release corresponden a los servicios del proyecto en Render.
 
 3. En Android Studio, ir a **Build → Generate Signed App Bundle or APK…**, elegir **APK** y la variante **release**.
 4. Usar el mismo keystore de la entrega del compañero, su alias y sus contraseñas. Según su documentación, se llama **MarceltaKtKey** y se guarda fuera del repositorio en `E:\keystores\`. Esa ruta corresponde a su equipo; no es una dependencia incluida en Git.
